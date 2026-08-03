@@ -1,0 +1,98 @@
+/* 1. Load Tailwind Directives FIRST */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 2. Custom Base Overrides */
+body {
+  font-family: var(--sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  @apply bg-icewhite text-slate-900;
+}
+
+/* 3. Existing Styles converted to work alongside Tailwind */
+.main-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Dashboard Component Styles */
+.dashboard-container {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.stat-card {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border-left: 4px solid #0078D4; /* Azure accent */
+}
+
+.stat-card h3 {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.stat-card p {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.quick-actions {
+  margin-top: 2rem;
+}
+
+.quick-actions h3 {
+  color: #0f172a;
+  margin-bottom: 1rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.action-buttons button {
+  padding: 0.75rem 1.5rem;
+  background-color: #0d9488; /* Teal solid */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background-color 0.2s;
+}
+
+.action-buttons button:hover {
+  background-color: #0f766e;
+}
+
+/* Add Student & Utilities */
+.add-student-container {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  font-size: 1.2rem;
+  color: #64748b;
+}

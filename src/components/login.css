@@ -1,0 +1,123 @@
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8fafc; /* Ice White */
+  padding: 20px;
+}
+
+.login-box {
+  background: #ffffff;
+  padding: 40px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 30px rgba(13, 148, 136, 0.08); /* Subtle Teal tint shadow */
+  width: 100%;
+  max-width: 400px;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.login-header h1 {
+  font-size: 2rem;
+  color: #0f766e; /* Dark Teal */
+  margin: 0;
+}
+
+.login-header h2 {
+  font-size: 1.2rem;
+  color: #0284c7; /* Azure */
+  margin: 5px 0;
+}
+
+.login-header p {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.login-form .form-group {
+  margin-bottom: 20px;
+}
+
+.login-form label {
+  display: block;
+  margin-bottom: 5px;
+  color: #334155;
+  font-weight: 500;
+}
+
+.login-form input {
+  width: 100%;
+  padding: 12px;
+  background-color: #f8fafc; /* Ice White input background */
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 1rem;
+  color: #0f172a;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.login-form input:focus {
+  outline: none;
+  background-color: #ffffff;
+  border-color: #0284c7; /* Azure border on focus */
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #0284c7; /* Solid Azure */
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.login-btn:hover:not(:disabled) {
+  background-color: #0d9488; /* Hover turns to Teal */
+  transform: translateY(-1px);
+}
+
+.login-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.login-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error-message {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+
+.login-footer {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.login-footer p {
+  margin: 3px 0;
+}
+
+.login-footer strong {
+  color: #334155;
+}

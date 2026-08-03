@@ -1,0 +1,305 @@
+/* ==========================================
+   NAVBAR - Modern Dark Theme
+   ========================================== */
+
+.navbar {
+  background: #2c3e50;
+  color: white;
+  padding: 0 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 64px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  border-bottom: 3px solid #3498db;
+}
+
+/* ==========================================
+   LOGO / BRAND
+   ========================================== */
+
+.navbar-brand {
+  color: white;
+  text-decoration: none;
+  font-size: 1.2rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.2s;
+}
+
+.navbar-brand:hover {
+  transform: scale(1.02);
+}
+
+.navbar-brand .brand-icon {
+  font-size: 1.4rem;
+}
+
+.navbar-brand .brand-text {
+  background: linear-gradient(135deg, #ffffff, #64b5f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ==========================================
+   NAVIGATION LINKS
+   ========================================== */
+
+.navbar-center {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.navbar-center a {
+  color: #ecf0f1;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  position: relative;
+}
+
+.navbar-center a:hover {
+  background: #34495e;
+  transform: translateY(-1px);
+}
+
+.navbar-center a.active {
+  color: #64b5f6;
+  background: rgba(52, 152, 219, 0.15);
+}
+
+.navbar-center a.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 2px;
+  background: #3498db;
+  border-radius: 2px;
+}
+
+/* ==========================================
+   USER MENU
+   ========================================== */
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-info {
+  color: #ecf0f1;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #3498db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: white;
+  margin-right: 4px;
+}
+
+.user-name {
+  font-weight: 500;
+}
+
+.user-role {
+  color: #f39c12;
+  margin-left: 5px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: rgba(243, 156, 18, 0.15);
+  padding: 2px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(243, 156, 18, 0.25);
+}
+
+.logout-btn {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 0.4rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.logout-btn:hover {
+  background: #c0392b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+.logout-btn:active {
+  transform: translateY(0);
+}
+
+/* ==========================================
+   MOBILE HAMBURGER MENU
+   ========================================== */
+
+.hamburger-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.3s;
+}
+
+.hamburger-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.hamburger-icon {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: white;
+  margin: 4px 0;
+  transition: all 0.3s ease;
+}
+
+.hamburger-btn.open .hamburger-icon:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.hamburger-btn.open .hamburger-icon:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger-btn.open .hamburger-icon:nth-child(3) {
+  transform: rotate(-45deg) translate(5px, -5px);
+}
+
+/* ==========================================
+   MOBILE DROPDOWN MENU
+   ========================================== */
+
+.mobile-menu {
+  display: none;
+  flex-direction: column;
+  width: 100%;
+  padding: 0.5rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mobile-menu a {
+  color: #ecf0f1;
+  text-decoration: none;
+  padding: 0.7rem 1rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+}
+
+.mobile-menu a:hover {
+  background: #34495e;
+}
+
+.mobile-menu a.active {
+  color: #64b5f6;
+  background: rgba(52, 152, 219, 0.15);
+}
+
+/* ==========================================
+   RESPONSIVE DESIGN
+   ========================================== */
+
+/* Tablet and below */
+@media (max-width: 768px) {
+  .navbar {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 0.5rem 1rem;
+    gap: 0.5rem;
+  }
+
+  .navbar-center {
+    display: none;
+  }
+
+  .hamburger-btn {
+    display: block;
+  }
+
+  .mobile-menu {
+    display: flex;
+  }
+
+  .navbar-right {
+    gap: 0.5rem;
+  }
+
+  .user-info {
+    font-size: 0.8rem;
+  }
+
+  .user-name {
+    display: none;
+  }
+
+  .user-role {
+    font-size: 0.6rem;
+    padding: 1px 8px;
+  }
+
+  .logout-btn {
+    padding: 0.3rem 0.8rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* Small phones */
+@media (max-width: 480px) {
+  .navbar {
+    padding: 0.4rem 0.6rem;
+  }
+
+  .navbar-brand {
+    font-size: 1rem;
+  }
+
+  .user-info {
+    font-size: 0.7rem;
+  }
+
+  .logout-btn {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.7rem;
+  }
+
+  .user-avatar {
+    width: 24px;
+    height: 24px;
+    font-size: 0.6rem;
+  }
+}
