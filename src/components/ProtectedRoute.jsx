@@ -16,8 +16,9 @@ const ProtectedRoute = ({ children, requiredRoles = [] }) => {
   }
 
   // Redirect to login if not authenticated
+  // Default login page is the student login
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/student-login" replace />;
   }
 
   // Check if user has the required role(s)

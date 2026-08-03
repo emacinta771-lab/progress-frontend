@@ -224,11 +224,11 @@ export const AuthProvider = ({ children }) => {
   const isStudent = user?.role === 'student' || user?.is_student;
   const isParent = user?.role === 'parent' || user?.is_parent;
 
-  // ==========================================
+// ==========================================
   // GET DASHBOARD PATH
   // ==========================================
   const getDashboardPath = useCallback(() => {
-    if (!user) return '/login';
+    if (!user) return '/student-login';
     
     const roleMap = {
       admin: '/admin-dashboard',

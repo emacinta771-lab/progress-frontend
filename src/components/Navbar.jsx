@@ -58,7 +58,7 @@ const Navbar = () => {
             <button
               onClick={() => {
                 logout();
-                navigate('/login');
+                navigate('/student-login');
               }}
               className="text-xs font-semibold bg-[#0284c7] hover:bg-[#0369a1] text-white px-3.5 py-1.5 rounded-full transition-colors border border-sky-400/30"
             >

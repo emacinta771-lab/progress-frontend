@@ -102,7 +102,7 @@ const StudentRegister = () => {
       setSuccess('✅ Account created successfully! You can now log in.');
       
       setTimeout(() => {
-        navigate('/login');
+        navigate('/student-login');
       }, 2000);
       
     } catch (err) {
@@ -188,7 +188,7 @@ const StudentRegister = () => {
             </button>
 
             <div className="text-center mt-4">
-              <Link to="/login" className="text-sm text-[#135D66] hover:underline">
+              <Link to="/student-login" className="text-sm text-[#135D66] hover:underline">
                 Already have an account? Login
               </Link>
             </div>
@@ -310,7 +310,7 @@ const StudentRegister = () => {
             </div>
 
             <div className="text-center mt-4">
-              <Link to="/login" className="text-sm text-[#135D66] hover:underline">
+              <Link to="/student-login" className="text-sm text-[#135D66] hover:underline">
                 Already have an account? Login
               </Link>
             </div>

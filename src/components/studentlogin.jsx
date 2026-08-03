@@ -177,6 +177,12 @@ const StudentLogin = () => {
                 Register
               </Link>
             </p>
+            <p className="text-sm text-gray-600 mt-2">
+              Staff?{' '}
+              <Link to="/login" className="text-[#135D66] hover:underline font-medium">
+                Login here
+              </Link>
+            </p>
           </div>
         </div>
       </div>
