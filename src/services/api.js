@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Prefer explicit VITE_API_URL. In production, if not set, fall back
+// to the deployed Render API so the Vercel frontend works without env vars.
+const DEFAULT_RENDER_API = 'https://progress-backend-sqrr.onrender.com/api';
+const API_BASE = import.meta.env.VITE_API_URL
+  || (import.meta.env.PROD ? DEFAULT_RENDER_API : 'http://localhost:5000/api');
 
 const api = axios.create({
   baseURL: API_BASE,
