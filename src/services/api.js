@@ -1,10 +1,24 @@
 import axios from 'axios';
 
-// Prefer explicit VITE_API_URL. In production, if not set, fall back
-// to the deployed Render API so the Vercel frontend works without env vars.
+// Prefer explicit VITE_API_URL. Ensure it includes the `/api` suffix.
 const DEFAULT_RENDER_API = 'https://progress-backend-sqrr.onrender.com/api';
-const API_BASE = import.meta.env.VITE_API_URL
-  || (import.meta.env.PROD ? DEFAULT_RENDER_API : 'http://localhost:5000/api');
+function ensureApiSuffix(raw) {
+  if (!raw) return raw;
+  try {
+    const u = new URL(raw);
+    // preserve host+protocol and append /api if pathname doesn't include it
+    if (u.pathname.endsWith('/api')) return raw.replace(/\/+$/, '');
+    return raw.replace(/\/+$/, '') + '/api';
+  } catch (e) {
+    // raw may be a relative string; fallback to simple check
+    return raw.endsWith('/api') ? raw : raw.replace(/\/+$/, '') + '/api';
+  }
+}
+
+const rawEnvUrl = import.meta.env.VITE_API_URL;
+const API_BASE = rawEnvUrl
+  ? ensureApiSuffix(rawEnvUrl)
+  : (import.meta.env.PROD ? DEFAULT_RENDER_API : 'http://localhost:5000/api');
 
 const api = axios.create({
   baseURL: API_BASE,
