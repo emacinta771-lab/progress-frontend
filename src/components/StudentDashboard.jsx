@@ -633,7 +633,7 @@ const StudentDashboard = () => {
                     >
                       {isAnalyzing ? (
                         <>
-                          <span className="animate-spin">⏳</span> AI Analyzing...
+                          <span className="animate-spin">⏳</span> Analyzing...
                         </>
                       ) : (
                         'Analyze'

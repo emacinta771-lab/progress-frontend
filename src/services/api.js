@@ -372,6 +372,9 @@ export const teacherAPI = {
   // Create teacher
   create: (data) => api.post('/teachers', data),
   
+  // Create teacher login account
+  createLogin: (data) => api.post('/auth/create-teacher-account', data),
+  
   // Update teacher
   update: (id, data) => api.put(`/teachers/${id}`, data),
   
