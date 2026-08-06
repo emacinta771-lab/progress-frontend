@@ -330,7 +330,9 @@ const UserManagement = () => {
                   </td>
                   <td className="p-3">{user.first_name} {user.last_name}</td>
                   <td className="p-3 text-sm text-gray-600">{user.email}</td>
-                  <td className="p-3 text-sm font-mono text-[#135D66]">{user.password_plain || '••••••••'}</td>
+                  <td className="p-3 text-sm font-mono text-[#135D66] break-all">
+                    {user.password_plain || 'Not stored'}
+                  </td>
                   <td className="p-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getRoleBadgeColor(user.role)}`}>
                       {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
