@@ -19,6 +19,8 @@ const UserManagement = () => {
     role: 'teacher'
   });
 
+  const allowedCreateRoles = ['admin', 'teacher', 'accountant'];
+
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -269,11 +271,11 @@ const UserManagement = () => {
               onChange={(e) => setRegisterData({...registerData, role: e.target.value})}
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#135D66] focus:border-[#135D66] transition"
             >
-              <option value="admin">Admin</option>
-              <option value="teacher">Teacher</option>
-              <option value="accountant">Accountant</option>
-              <option value="student">Student</option>
-              <option value="parent">Parent</option>
+              {allowedCreateRoles.map((role) => (
+                <option key={role} value={role}>
+                  {role.charAt(0).toUpperCase() + role.slice(1)}
+                </option>
+              ))}
             </select>
             <div className="md:col-span-2 flex justify-end gap-3">
               <button
