@@ -302,6 +302,7 @@ const UserManagement = () => {
               <th className="text-left p-3 text-sm font-semibold text-gray-600">Username</th>
               <th className="text-left p-3 text-sm font-semibold text-gray-600">Name</th>
               <th className="text-left p-3 text-sm font-semibold text-gray-600">Email</th>
+              <th className="text-left p-3 text-sm font-semibold text-gray-600">Password</th>
               <th className="text-left p-3 text-sm font-semibold text-gray-600">Role</th>
               <th className="text-left p-3 text-sm font-semibold text-gray-600">Status</th>
               <th className="text-left p-3 text-sm font-semibold text-gray-600">Actions</th>
@@ -310,7 +311,7 @@ const UserManagement = () => {
           <tbody>
             {users.length === 0 ? (
               <tr>
-                <td colSpan="6" className="text-center p-6 text-gray-500">
+                <td colSpan="7" className="text-center p-6 text-gray-500">
                   No users found
                 </td>
               </tr>
@@ -327,6 +328,7 @@ const UserManagement = () => {
                   </td>
                   <td className="p-3">{user.first_name} {user.last_name}</td>
                   <td className="p-3 text-sm text-gray-600">{user.email}</td>
+                  <td className="p-3 text-sm font-mono text-[#135D66]">{user.password_plain || '••••••••'}</td>
                   <td className="p-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getRoleBadgeColor(user.role)}`}>
                       {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
