@@ -7,4 +7,14 @@ import os from 'os'
 export default defineConfig({
   plugins: [react()],
   cacheDir: path.join(os.tmpdir(), 'vite-sms-frontend'),
+  server: {
+    proxy: {
+      // Proxy API requests to the deployed backend to avoid CORS issues in dev
+      '/api': {
+        target: 'https://progress-backend-sqrr.onrender.com',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
 })

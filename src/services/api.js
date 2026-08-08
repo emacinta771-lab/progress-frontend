@@ -16,9 +16,14 @@ function ensureApiSuffix(raw) {
 }
 
 const rawEnvUrl = import.meta.env.VITE_API_URL;
-const API_BASE = rawEnvUrl
-  ? ensureApiSuffix(rawEnvUrl)
-  : (import.meta.env.PROD ? DEFAULT_RENDER_API : 'http://localhost:5000/api');
+// In development, use the Vite dev proxy (relative /api) to avoid CORS issues.
+// The proxy in vite.config.js forwards /api to the deployed backend.
+// In production, use the absolute VITE_API_URL (or the Render default).
+const API_BASE = import.meta.env.DEV
+  ? '/api'
+  : (rawEnvUrl
+      ? ensureApiSuffix(rawEnvUrl)
+      : DEFAULT_RENDER_API);
 
 const api = axios.create({
   baseURL: API_BASE,

@@ -19,6 +19,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const { login, user } = useAuth();
   const navigate = useNavigate();
@@ -29,14 +30,30 @@ const Login = () => {
     }
   }, [user, navigate]);
 
+  // Load saved username if Remember Me was previously checked
+  useEffect(() => {
+    const savedUsername = localStorage.getItem('staffUsername');
+    if (savedUsername) {
+      setUsername(savedUsername);
+      setRememberMe(true);
+    }
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    const result = await login(username, password);
+    const formattedUsername = username.trim();
+    const result = await login(formattedUsername, password);
 
     if (result.success) {
+      if (rememberMe) {
+        localStorage.setItem('staffUsername', formattedUsername);
+      } else {
+        localStorage.removeItem('staffUsername');
+      }
+
       navigate(getRolePath(result.user?.role));
     } else {
       setError(result.error || 'Login failed.');
@@ -61,7 +78,7 @@ const Login = () => {
 
         {/* Form Body */}
         <div className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded">
                 <p className="text-red-700 text-xs font-medium">{error}</p>
@@ -132,6 +149,20 @@ const Login = () => {
               </div>
             </div>
 
+            {/* Remember Me Checkbox */}
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                type="checkbox"
+                id="rememberMe"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 text-[#135D66] focus:ring-[#135D66] rounded border-gray-300 cursor-pointer"
+              />
+              <label htmlFor="rememberMe" className="text-xs text-gray-600 cursor-pointer select-none">
+                Remember me
+              </label>
+            </div>
+
             {/* Submit Button */}
             <button
               type="submit"
@@ -142,6 +173,7 @@ const Login = () => {
             </button>
           </form>
         </div>
+
       </div>
     </div>
   );
