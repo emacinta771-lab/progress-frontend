@@ -20,12 +20,15 @@ const StudentDashboard = () => {
   // Folder Toggle State (Closed by default)
   const [isFolderOpen, setIsFolderOpen] = useState(false);
 
-  // Receipt Upload & Delete States
+  // Receipt Upload States
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [receiptFile, setReceiptFile] = useState(null);
   const [receiptPreview, setReceiptPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
+
+  // Deletion States
   const [deletingId, setDeletingId] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   const fileInputRef = useRef(null);
 
@@ -113,7 +116,7 @@ const StudentDashboard = () => {
       if (response.data?.success) {
         setSuccess('✅ Receipt uploaded successfully to your receipt folder!');
         resetModalState();
-        setIsFolderOpen(true); // Automatically open folder to show new upload
+        setIsFolderOpen(true);
         await fetchStudentData();
       }
     } catch (err) {
@@ -125,8 +128,6 @@ const StudentDashboard = () => {
 
   // Delete Receipt Handler
   const handleDeleteReceipt = async (receiptId) => {
-    if (!window.confirm('Are you sure you want to delete this receipt?')) return;
-
     setDeletingId(receiptId);
     setError('');
     setSuccess('');
@@ -139,6 +140,7 @@ const StudentDashboard = () => {
       setError(err.response?.data?.error || 'Failed to delete receipt. Please try again.');
     } finally {
       setDeletingId(null);
+      setConfirmDeleteId(null);
     }
   };
 
@@ -416,6 +418,8 @@ const StudentDashboard = () => {
                     const amount = item.extracted_data?.amount || item.amount;
                     const method = item.extracted_data?.payment_method || item.payment_method || '—';
                     const date = item.uploaded_date || item.uploaded_at;
+                    const isConfirming = confirmDeleteId === item.id;
+
                     return (
                       <div
                         key={item.id}
@@ -456,15 +460,32 @@ const StudentDashboard = () => {
                               {method !== '—' ? ` · ${method}` : ''}
                             </p>
 
-                            {/* Delete Action Button */}
-                            <button
-                              onClick={() => handleDeleteReceipt(item.id)}
-                              disabled={deletingId === item.id}
-                              className="text-[11px] font-semibold text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded transition disabled:opacity-50"
-                              title="Delete receipt"
-                            >
-                              {deletingId === item.id ? 'Deleting...' : '🗑️ Delete'}
-                            </button>
+                            {/* In-Card Custom Confirmation UI (No JS Popups) */}
+                            {isConfirming ? (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => handleDeleteReceipt(item.id)}
+                                  disabled={deletingId === item.id}
+                                  className="text-[10px] font-bold text-white bg-red-600 hover:bg-red-700 px-2 py-1 rounded transition disabled:opacity-50"
+                                >
+                                  {deletingId === item.id ? '...' : 'Confirm'}
+                                </button>
+                                <button
+                                  onClick={() => setConfirmDeleteId(null)}
+                                  className="text-[10px] font-semibold text-gray-600 hover:bg-gray-100 px-1.5 py-1 rounded transition"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setConfirmDeleteId(item.id)}
+                                className="text-[11px] font-semibold text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded transition"
+                                title="Delete receipt"
+                              >
+                                🗑️ Delete
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
