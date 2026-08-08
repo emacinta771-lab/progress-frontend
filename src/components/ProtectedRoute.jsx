@@ -15,8 +15,8 @@ const ProtectedRoute = ({ children, requiredRoles = [] }) => {
     );
   }
 
-  // Redirect to login if not authenticated
-  // Default login page is the student login
+  // Redirect to student login page if not authenticated
+  // Staff members can access /login for the staff portal
   if (!user) {
     return <Navigate to="/student-login" replace />;
   }
@@ -31,7 +31,7 @@ const ProtectedRoute = ({ children, requiredRoles = [] }) => {
       student: '/student-dashboard',
       parent: '/student-dashboard' // Parents go to student dashboard
     };
-    
+
     // If role not found in map, go to default dashboard
     const redirectPath = roleMap[user.role] || '/dashboard';
     return <Navigate to={redirectPath} replace />;
