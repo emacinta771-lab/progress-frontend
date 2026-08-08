@@ -20,13 +20,12 @@ const StudentDashboard = () => {
   // Folder Toggle State (Closed by default)
   const [isFolderOpen, setIsFolderOpen] = useState(false);
 
-  // Receipt Upload States
+  // Receipt Upload & Delete States
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [receiptFile, setReceiptFile] = useState(null);
   const [receiptPreview, setReceiptPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [receiptText, setReceiptText] = useState('');
-  const [uploadMethod, setUploadMethod] = useState('file'); // 'file' | 'text'
+  const [deletingId, setDeletingId] = useState(null);
 
   const fileInputRef = useRef(null);
 
@@ -89,19 +88,13 @@ const StudentDashboard = () => {
     setShowUploadModal(false);
     setReceiptFile(null);
     setReceiptPreview(null);
-    setReceiptText('');
     setError('');
   };
 
   // Direct Upload Flow
   const handleUpload = async () => {
-    if (uploadMethod === 'file' && !receiptFile) {
+    if (!receiptFile) {
       setError('Please select a receipt image or file.');
-      return;
-    }
-
-    if (uploadMethod === 'text' && !receiptText.trim()) {
-      setError('Please enter receipt details.');
       return;
     }
 
@@ -110,26 +103,12 @@ const StudentDashboard = () => {
     setSuccess('');
 
     try {
-      let response;
-
-      if (uploadMethod === 'file') {
-        response = await receiptAPI.uploadReceipt({
-          receipt: receiptFile,
-          student_id: myStudent.student_id,
-          student_name: `${myStudent.first_name} ${myStudent.last_name}`,
-          student_code: myStudent.student_code,
-        });
-      } else {
-        const textBlob = new Blob([receiptText], { type: 'text/plain' });
-        const textFile = new File([textBlob], `receipt-${Date.now()}.txt`, { type: 'text/plain' });
-
-        response = await receiptAPI.uploadReceipt({
-          receipt: textFile,
-          student_id: myStudent.student_id,
-          student_name: `${myStudent.first_name} ${myStudent.last_name}`,
-          student_code: myStudent.student_code,
-        });
-      }
+      const response = await receiptAPI.uploadReceipt({
+        receipt: receiptFile,
+        student_id: myStudent.student_id,
+        student_name: `${myStudent.first_name} ${myStudent.last_name}`,
+        student_code: myStudent.student_code,
+      });
 
       if (response.data?.success) {
         setSuccess('✅ Receipt uploaded successfully to your receipt folder!');
@@ -141,6 +120,25 @@ const StudentDashboard = () => {
       setError(err.response?.data?.error || 'Failed to upload receipt. Please try again.');
     } finally {
       setUploading(false);
+    }
+  };
+
+  // Delete Receipt Handler
+  const handleDeleteReceipt = async (receiptId) => {
+    if (!window.confirm('Are you sure you want to delete this receipt?')) return;
+
+    setDeletingId(receiptId);
+    setError('');
+    setSuccess('');
+
+    try {
+      await receiptAPI.deleteReceipt(receiptId);
+      setSuccess('🗑️ Receipt deleted successfully.');
+      setReceipts((prev) => prev.filter((item) => item.id !== receiptId));
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to delete receipt. Please try again.');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -396,7 +394,7 @@ const StudentDashboard = () => {
             <div className="flex items-center gap-3">
               <button
                 onClick={(e) => {
-                  e.stopPropagation(); // Prevents toggling folder state when clicking upload
+                  e.stopPropagation();
                   setShowUploadModal(true);
                 }}
                 className="px-3.5 py-1.5 bg-[#135D66] text-white text-xs font-semibold rounded-lg hover:bg-[#0e4a52] transition shadow-sm hidden sm:block"
@@ -409,7 +407,7 @@ const StudentDashboard = () => {
             </div>
           </div>
 
-          {/* Folder Content (Rendered only when open) */}
+          {/* Folder Content */}
           {isFolderOpen && (
             <div className="p-4 sm:p-5 border-t border-gray-200 animate-fadeIn">
               {receipts.length > 0 ? (
@@ -421,7 +419,7 @@ const StudentDashboard = () => {
                     return (
                       <div
                         key={item.id}
-                        className="border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-md transition-all"
+                        className="border border-gray-200 rounded-xl overflow-hidden bg-white hover:shadow-md transition-all relative group"
                       >
                         {item.receipt_image_url ? (
                           <a href={item.receipt_image_url} target="_blank" rel="noreferrer">
@@ -433,9 +431,10 @@ const StudentDashboard = () => {
                           </a>
                         ) : (
                           <div className="w-full h-32 bg-[#f0f7ff] flex items-center justify-center text-4xl text-[#135D66]">
-                            ✏️
+                            📄
                           </div>
                         )}
+                        
                         <div className="p-3.5">
                           <div className="flex items-center justify-between gap-2">
                             <p className="text-xs font-bold text-gray-800 truncate">
@@ -450,10 +449,23 @@ const StudentDashboard = () => {
                               {item.status || 'Pending'}
                             </span>
                           </div>
-                          <p className="text-[11px] text-gray-500 mt-1.5">
-                            {date ? new Date(date).toLocaleDateString() : '—'}
-                            {method !== '—' ? ` · ${method}` : ''}
-                          </p>
+
+                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+                            <p className="text-[11px] text-gray-500">
+                              {date ? new Date(date).toLocaleDateString() : '—'}
+                              {method !== '—' ? ` · ${method}` : ''}
+                            </p>
+
+                            {/* Delete Action Button */}
+                            <button
+                              onClick={() => handleDeleteReceipt(item.id)}
+                              disabled={deletingId === item.id}
+                              className="text-[11px] font-semibold text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded transition disabled:opacity-50"
+                              title="Delete receipt"
+                            >
+                              {deletingId === item.id ? 'Deleting...' : '🗑️ Delete'}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     );
@@ -464,7 +476,7 @@ const StudentDashboard = () => {
                   <div className="text-4xl mb-2">📂</div>
                   <p className="text-sm font-semibold text-gray-700">Receipt Folder is empty</p>
                   <p className="text-xs text-gray-400 mt-1">
-                    Upload image or text receipt submissions to keep them stored in this folder.
+                    Upload image receipts to keep them stored in this folder.
                   </p>
                 </div>
               )}
@@ -546,95 +558,54 @@ const StudentDashboard = () => {
 
             <div className="p-6">
               <p className="text-xs text-gray-600 mb-4">
-                Submit your payment receipt to add it to your student receipt folder.
+                Upload a picture or PDF of your payment receipt to add it to your folder.
               </p>
 
-              {/* Upload Method Tabs */}
-              <div className="flex rounded-lg bg-gray-100 p-1 mb-4">
-                <button
-                  type="button"
-                  onClick={() => setUploadMethod('file')}
-                  className={`flex-1 py-2 text-xs font-semibold rounded-md transition ${
-                    uploadMethod === 'file'
-                      ? 'bg-[#135D66] text-white shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  📄 File Upload
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUploadMethod('text')}
-                  className={`flex-1 py-2 text-xs font-semibold rounded-md transition ${
-                    uploadMethod === 'text'
-                      ? 'bg-[#135D66] text-white shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  ✏️ Manual Entry
-                </button>
+              <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#135D66] transition-colors relative bg-gray-50/50">
+                {receiptPreview ? (
+                  <div className="space-y-4">
+                    <img
+                      src={receiptPreview}
+                      alt="Receipt preview"
+                      className="max-h-64 mx-auto rounded-lg shadow-sm border border-gray-200"
+                    />
+                    <button
+                      onClick={() => {
+                        if (receiptPreview) URL.revokeObjectURL(receiptPreview);
+                        setReceiptFile(null);
+                        setReceiptPreview(null);
+                      }}
+                      className="px-4 py-1.5 text-xs font-semibold text-red-600 hover:text-red-800 transition rounded-lg hover:bg-red-50"
+                    >
+                      ✕ Remove File
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="text-5xl mb-3">📄</div>
+                    <p className="text-xs text-gray-600 font-medium">
+                      Tap to take a photo or select a file
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-1">
+                      PNG, JPG, JPEG, or PDF up to 10MB
+                    </p>
+                    <button
+                      type="button"
+                      onClick={triggerCameraPicker}
+                      className="mt-3 px-4 py-2 bg-[#135D66] text-white rounded-lg text-xs font-semibold hover:bg-[#0e4a52] transition shadow-sm"
+                    >
+                      📷 Select File
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={handleFileSelect}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                  </div>
+                )}
               </div>
-
-              {uploadMethod === 'file' ? (
-                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-[#135D66] transition-colors relative bg-gray-50/50">
-                  {receiptPreview ? (
-                    <div className="space-y-4">
-                      <img
-                        src={receiptPreview}
-                        alt="Receipt preview"
-                        className="max-h-64 mx-auto rounded-lg shadow-sm border border-gray-200"
-                      />
-                      <button
-                        onClick={() => {
-                          if (receiptPreview) URL.revokeObjectURL(receiptPreview);
-                          setReceiptFile(null);
-                          setReceiptPreview(null);
-                        }}
-                        className="px-4 py-1.5 text-xs font-semibold text-red-600 hover:text-red-800 transition rounded-lg hover:bg-red-50"
-                      >
-                        ✕ Remove Image
-                      </button>
-                    </div>
-                  ) : (
-                    <div>
-                      <div className="text-5xl mb-3">📄</div>
-                      <p className="text-xs text-gray-600 font-medium">
-                        Tap to take a photo or select a file
-                      </p>
-                      <p className="text-[10px] text-gray-400 mt-1">
-                        PNG, JPG, JPEG, or PDF up to 10MB
-                      </p>
-                      <button
-                        type="button"
-                        onClick={triggerCameraPicker}
-                        className="mt-3 px-4 py-2 bg-[#135D66] text-white rounded-lg text-xs font-semibold hover:bg-[#0e4a52] transition shadow-sm"
-                      >
-                        📷 Select File
-                      </button>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*,.pdf"
-                        onChange={handleFileSelect}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      />
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <textarea
-                    value={receiptText}
-                    onChange={(e) => setReceiptText(e.target.value)}
-                    placeholder="Enter or paste your receipt details here...&#10;&#10;Example:&#10;Amount: 25,000 MK&#10;Payment Date: 2026-08-08&#10;Receipt/Ref Number: RCP-00123"
-                    rows="5"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#135D66] focus:border-[#135D66] transition text-xs leading-relaxed"
-                  />
-                  <p className="text-[11px] text-gray-400">
-                    Include key details like Amount, Date, and Reference/Receipt Number.
-                  </p>
-                </div>
-              )}
 
               {/* Submit Buttons */}
               <div className="mt-5 flex gap-3">
@@ -646,7 +617,7 @@ const StudentDashboard = () => {
                 </button>
                 <button
                   onClick={handleUpload}
-                  disabled={uploading || (uploadMethod === 'file' ? !receiptFile : !receiptText.trim())}
+                  disabled={uploading || !receiptFile}
                   className="flex-1 px-4 py-2 bg-[#135D66] text-white rounded-lg hover:bg-[#0e4a52] transition disabled:opacity-50 text-xs font-semibold flex items-center justify-center gap-2 shadow-sm"
                 >
                   {uploading ? (
