@@ -9,7 +9,7 @@ function ensureApiSuffix(raw) {
     // preserve host+protocol and append /api if pathname doesn't include it
     if (u.pathname.endsWith('/api')) return raw.replace(/\/+$/, '');
     return raw.replace(/\/+$/, '') + '/api';
-  } catch (e) {
+  } catch {
     // raw may be a relative string; fallback to simple check
     return raw.endsWith('/api') ? raw : raw.replace(/\/+$/, '') + '/api';
   }
@@ -388,6 +388,9 @@ export const teacherAPI = {
   
   // Get teacher's classes
   getClasses: (id) => api.get(`/teachers/${id}/classes`),
+
+  // Save teacher's class assignment
+  updateClassAssignment: (id, data) => api.put(`/teachers/${id}/classes`, data),
   
   // Get teacher's students
   getStudents: (id) => api.get(`/teachers/${id}/students`),

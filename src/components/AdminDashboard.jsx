@@ -120,12 +120,12 @@ const AdminDashboard = () => {
   ];
 
 const navItems = [
-    { title: 'Add Student', icon: '➕', path: '/add-student' },
-    { title: 'Create Account', icon: '👤', path: '/admin/create-student', highlight: true },
-    { title: 'Manage Teachers', icon: '👨‍🏫', path: '/teachers' },
-    { title: 'Manage Users', icon: '👥', path: '/users' },
-    { title: 'Create Accountant', icon: '🧾', path: '/users', highlight: true },
-    { title: 'View Reports', icon: '📊', path: '/reports' }
+  { title: 'Add Student', path: '/add-student' },
+  { title: 'Create Account', path: '/admin/create-student', highlight: true },
+  { title: 'Manage Teachers', path: '/teachers' },
+  { title: 'Manage Users', path: '/users' },
+  { title: 'Create Accountant', path: '/users', highlight: true },
+  { title: 'View Reports', path: '/reports' }
   ];
 
   return (
@@ -172,7 +172,6 @@ const navItems = [
                       : 'text-white/70 hover:bg-white/10 hover:text-white'
                     }`}
                 >
-                  <span>{item.icon}</span>
                   <span>{item.title}</span>
                   {item.title === 'Create Account' && studentsWithoutAccounts > 0 && (
                     <span className="ml-1 bg-yellow-400 text-black px-1.5 py-0.5 rounded-full text-[10px]">

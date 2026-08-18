@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import Login from './components/login';
@@ -29,6 +28,7 @@ import FeeStructure from './components/FeeStructure';
 // Attendance & Grades
 import AttendanceManagement from './components/AttendanceManagement';
 import GradeManagement from './components/GradeManagement';
+import MyClass from './components/MyClass';
 
 // Reports
 import Reports from './components/Reports';
@@ -54,8 +54,8 @@ const AppRoutes = () => {
           <Route path="/student-login" element={<StudentLogin />} />
           <Route path="/student-register" element={<StudentRegister />} />
 
-          {/* Root path redirects to student login (default entry point) */}
-          <Route path="/" element={<Navigate to="/student-login" replace />} />
+          {/* Root path redirects to staff login (default entry point) */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
 
           {/* ========================================== */}
           {/* DASHBOARD ROUTES */}
@@ -103,6 +103,13 @@ const AppRoutes = () => {
           {/* List all students */}
           <Route path="/students" element={
             <ProtectedRoute requiredRoles={['admin', 'teacher', 'accountant']}>
+              <StudentList />
+            </ProtectedRoute>
+          } />
+
+          {/* Teacher list shortcut */}
+          <Route path="/my-students" element={
+            <ProtectedRoute requiredRoles={['teacher']}>
               <StudentList />
             </ProtectedRoute>
           } />
@@ -199,7 +206,7 @@ const AppRoutes = () => {
           {/* My Class (Teacher view) */}
           <Route path="/my-class" element={
             <ProtectedRoute requiredRoles={['teacher']}>
-              <GradeManagement />
+              <MyClass />
             </ProtectedRoute>
           } />
 
@@ -231,7 +238,7 @@ const AppRoutes = () => {
           {/* ========================================== */}
           {/* FALLBACK ROUTES */}
           {/* ========================================== */}
-          <Route path="*" element={<Navigate to="/student-login" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </div>
     </BrowserRouter>

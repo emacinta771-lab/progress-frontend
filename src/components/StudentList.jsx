@@ -1,15 +1,117 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { studentAPI } from '../services/api';
 import TeacherNav from './TeacherNav';
+
+const buildStudentTableMarkup = (students) => {
+  const rows = students.map((student, index) => `
+    <tr>
+      <td>${index + 1}</td>
+      <td>${student.lin_code || student.student_code || student.student_id || ''}</td>
+      <td>${student.first_name || ''} ${student.last_name || ''}</td>
+      <td>Standard ${student.current_standard || ''} ${student.current_class || ''}</td>
+      <td>${student.parent_name || 'N/A'}</td>
+      <td>${student.parent_phone || 'N/A'}</td>
+      <td>${student.enrollment_status || 'Active'}</td>
+    </tr>
+  `).join('');
+
+  return `
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>LIN Code</th>
+          <th>Name</th>
+          <th>Class</th>
+          <th>Parent</th>
+          <th>Phone</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+};
+
+const buildExportDocument = (students) => {
+  const generatedAt = new Date().toLocaleString('en-GB');
+
+  return `
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Learner List</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 24px; color: #1f2937; }
+          h1 { color: #003C43; margin-bottom: 4px; }
+          p { margin-top: 0; margin-bottom: 16px; color: #4b5563; }
+          table { width: 100%; border-collapse: collapse; font-size: 12px; }
+          th, td { border: 1px solid #d1d5db; padding: 8px; text-align: left; }
+          th { background: #f3f4f6; color: #374151; }
+        </style>
+      </head>
+      <body>
+        <h1>Learner List</h1>
+        <p>Generated on ${generatedAt}</p>
+        ${buildStudentTableMarkup(students)}
+      </body>
+    </html>
+  `;
+};
 
 const StudentList = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => { fetchStudents(); }, []);
+  const triggerFileDownload = (content, mimeType, fileName) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportDocument = () => {
+    if (students.length === 0) {
+      setError('No learners available to export.');
+      return;
+    }
+
+    setError('');
+    triggerFileDownload(
+      buildExportDocument(students),
+      'application/msword',
+      'learner-list.doc'
+    );
+  };
+
+  const handleExportPdf = () => {
+    if (students.length === 0) {
+      setError('No learners available to export.');
+      return;
+    }
+
+    setError('');
+    const exportWindow = window.open('', '_blank', 'width=1000,height=700');
+    if (!exportWindow) {
+      setError('Pop-up blocked. Allow pop-ups to export the learner list as PDF.');
+      return;
+    }
+
+    exportWindow.document.write(buildExportDocument(students));
+    exportWindow.document.close();
+    exportWindow.focus();
+    exportWindow.print();
+  };
 
   const fetchStudents = async () => {
     try {
@@ -17,12 +119,33 @@ const StudentList = () => {
       const response = await studentAPI.getAll();
       setStudents(response.data.students || []);
       setError('');
-    } catch (err) {
+    } catch {
       setError('Failed to fetch students');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    let active = true;
+
+    const loadInitialStudents = async () => {
+      try {
+        const response = await studentAPI.getAll();
+        if (!active) return;
+        setStudents(response.data.students || []);
+        setError('');
+      } catch {
+        if (!active) return;
+        setError('Failed to fetch students');
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    loadInitialStudents();
+    return () => { active = false; };
+  }, []);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -34,11 +157,13 @@ const StudentList = () => {
   };
 
   const handleDelete = async (studentId) => {
-    if (!window.confirm('Delete this student?')) return;
+    setDeleting(true);
     try {
       await studentAPI.delete(studentId);
+      setPendingDelete(null);
       fetchStudents();
     } catch { setError('Failed to delete student'); }
+    finally { setDeleting(false); }
   };
 
   if (loading) return (
@@ -58,10 +183,26 @@ const StudentList = () => {
 
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <h1 className="text-lg font-bold text-[#003C43]">All Students</h1>
-            <Link to="/add-student"
-              className="px-4 py-2 text-sm bg-[#135D66] text-white rounded-lg hover:bg-[#0e4a52] transition font-medium">
-              + Add Student
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleExportPdf}
+                className="px-4 py-2 text-sm border border-[#135D66]/30 text-[#135D66] rounded-lg hover:bg-[#135D66]/5 transition font-medium"
+              >
+                Download PDF
+              </button>
+              <button
+                type="button"
+                onClick={handleExportDocument}
+                className="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium"
+              >
+                Download Document
+              </button>
+              <Link to="/add-student"
+                className="px-4 py-2 text-sm bg-[#135D66] text-white rounded-lg hover:bg-[#0e4a52] transition font-medium">
+                + Add Student
+              </Link>
+            </div>
           </div>
 
           <form onSubmit={handleSearch} className="flex gap-2 mb-6">
@@ -128,7 +269,7 @@ const StudentList = () => {
                           className="px-2.5 py-1 text-xs bg-teal-50 text-teal-700 rounded-lg hover:bg-teal-100 transition font-medium">
                           Edit
                         </Link>
-                        <button onClick={() => handleDelete(student.student_id)}
+                        <button onClick={() => setPendingDelete(student)}
                           className="px-2.5 py-1 text-xs bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition font-medium">
                           Delete
                         </button>
@@ -142,6 +283,37 @@ const StudentList = () => {
 
         </div>
       </div>
+
+      {pendingDelete && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[1px] flex items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-xl bg-white border border-gray-200 shadow-xl">
+            <div className="px-5 py-4 border-b border-gray-100">
+              <h2 className="text-base font-semibold text-gray-800">Delete Student</h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Are you sure you want to delete {pendingDelete.first_name} {pendingDelete.last_name}?
+              </p>
+            </div>
+            <div className="px-5 py-4 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPendingDelete(null)}
+                disabled={deleting}
+                className="px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDelete(pendingDelete.student_id || String(pendingDelete.id))}
+                disabled={deleting}
+                className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+              >
+                {deleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

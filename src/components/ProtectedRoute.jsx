@@ -1,4 +1,3 @@
-import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -15,10 +14,9 @@ const ProtectedRoute = ({ children, requiredRoles = [] }) => {
     );
   }
 
-  // Redirect to student login page if not authenticated
-  // Staff members can access /login for the staff portal
+  // Redirect to staff login page if not authenticated
   if (!user) {
-    return <Navigate to="/student-login" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   // Check if user has the required role(s)

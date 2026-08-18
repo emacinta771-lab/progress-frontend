@@ -199,12 +199,12 @@ const AccountantDashboard = () => {
     { title: 'Financial Holds', value: financialHolds, icon: '⚠️' }
   ];
   const navItems = [
-    { title: 'Dashboard', path: '/accountant-dashboard', icon: '📊' },
-    { title: 'Receipts', path: '/receipt-repository', icon: '📥' },
-    { title: 'Payments', path: '/payments', icon: '💰' },
-    { title: 'Students', path: '/students', icon: '👨‍🎓' },
-    { title: 'Reports', path: '/reports', icon: '📈' },
-    { title: 'Fees', path: '/fee-structure', icon: '📋' }
+    { title: 'Dashboard', path: '/accountant-dashboard' },
+    { title: 'Receipts', path: '/receipt-repository' },
+    { title: 'Payments', path: '/payments' },
+    { title: 'Students', path: '/students' },
+    { title: 'Reports', path: '/reports' },
+    { title: 'Fees', path: '/fee-structure' }
   ];
 
   const statusStyle = (status) => {
@@ -276,7 +276,6 @@ const AccountantDashboard = () => {
         </div>
       </nav>
 
-      {/* MAIN CONTENT */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
 
         {/* Stats Grid */}

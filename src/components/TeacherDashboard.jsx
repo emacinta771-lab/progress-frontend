@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { studentAPI } from '../services/api';
+import { attendanceAPI, studentAPI, teacherAPI } from '../services/api';
 import { Link, useNavigate } from 'react-router-dom';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -42,6 +42,11 @@ const TeacherDashboard = () => {
   const navigate = useNavigate();
 
   const [stats, setStats]                   = useState(null);
+  const [teacherSnapshot, setTeacherSnapshot] = useState({
+    classCount: 0,
+    presentToday: 0,
+    absentToday: 0,
+  });
   const [loading, setLoading]               = useState(true);
   const [allStudents, setAllStudents]       = useState([]);
   const [search, setSearch]                 = useState('');
@@ -54,22 +59,48 @@ const TeacherDashboard = () => {
   const [editError, setEditError]           = useState('');
   const [listOpen, setListOpen]             = useState(false);
 
-  useEffect(() => { load(); }, []);
-
-  const load = async () => {
-    setLoading(true);
-    try {
-      const [sRes, stRes] = await Promise.all([studentAPI.getStats(), studentAPI.getAll()]);
-      setStats(sRes.data.stats);
-      setAllStudents(stRes.data.students || []);
-    } catch { showToast('error', 'Failed to load data.'); }
-    finally { setLoading(false); }
-  };
-
   const showToast = (type, msg) => {
     setToast({ type, msg });
     setTimeout(() => setToast(null), 3500);
   };
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [sRes, stRes, classRes, attendanceRes] = await Promise.all([
+        studentAPI.getStats(),
+        studentAPI.getAll(),
+        user?.id ? teacherAPI.getStudents(user.id) : Promise.resolve({ data: { students: [], class_assignment: null } }),
+        attendanceAPI.getToday(),
+      ]);
+
+      setStats(sRes.data.stats);
+      setAllStudents(stRes.data.students || []);
+
+      const teacherStudents = classRes.data?.students || [];
+      const classAssignment = classRes.data?.class_assignment || null;
+      const todaysAttendance = attendanceRes.data?.attendance || [];
+      const teacherStudentInternalIds = new Set(teacherStudents.map((student) => student.id));
+
+      const teacherAttendance = todaysAttendance.filter((record) => teacherStudentInternalIds.has(record.student_id));
+      const presentToday = teacherAttendance.filter((record) => ['Present', 'Late'].includes(record.status)).length;
+      const absentToday = teacherAttendance.filter((record) => record.status === 'Absent').length;
+
+      setTeacherSnapshot({
+        classCount: classAssignment?.class_name ? 1 : 0,
+        presentToday,
+        absentToday,
+      });
+    } catch {
+      showToast('error', 'Failed to load data.');
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -152,12 +183,12 @@ const TeacherDashboard = () => {
   };
 
   const navItems = [
-    { title: 'Dashboard',  path: '/teacher-dashboard', icon: '📊' },
-    { title: 'Students',   path: '/my-students',        icon: '👨‍🎓' },
-    { title: 'Attendance', path: '/attendance',          icon: '📋' },
-    { title: 'Grades',     path: '/grades',              icon: '✏️' },
-    { title: 'Add Student',path: '/add-student',         icon: '➕' },
-    { title: 'My Class',   path: '/my-class',            icon: '👨‍🏫' },
+    { title: 'Dashboard',  path: '/teacher-dashboard' },
+    { title: 'Students',   path: '/my-students' },
+    { title: 'Attendance', path: '/attendance' },
+    { title: 'Grades',     path: '/grades' },
+    { title: 'Add Student',path: '/add-student' },
+    { title: 'My Class',   path: '/my-class' },
   ];
 
   // ── Loading skeleton ────────────────────────────────────────────────────────
@@ -208,7 +239,7 @@ const TeacherDashboard = () => {
               <Link key={item.path} to={item.path}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition
                   ${window.location.pathname === item.path ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
-                <span>{item.icon}</span><span>{item.title}</span>
+                <span>{item.title}</span>
               </Link>
             ))}
           </div>
@@ -222,9 +253,9 @@ const TeacherDashboard = () => {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
             { label: 'Total Students', value: stats?.total_students ?? 0,     icon: '👨‍🎓', color: 'text-indigo-600' },
-            { label: 'Present Today',  value: 32,                             icon: '✅',   color: 'text-green-600' },
-            { label: 'Absent Today',   value: 5,                              icon: '❌',   color: 'text-red-500' },
-            { label: 'My Classes',     value: 3,                              icon: '📚',   color: 'text-teal-600' },
+            { label: 'Present Today',  value: teacherSnapshot.presentToday,   icon: '✅',   color: 'text-green-600' },
+            { label: 'Absent Today',   value: teacherSnapshot.absentToday,    icon: '❌',   color: 'text-red-500' },
+            { label: 'My Classes',     value: teacherSnapshot.classCount,     icon: '📚',   color: 'text-teal-600' },
           ].map((s, i) => (
             <div key={i} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
               <div className="flex items-center justify-between mb-2">

@@ -228,7 +228,7 @@ export const AuthProvider = ({ children }) => {
   // GET DASHBOARD PATH
   // ==========================================
   const getDashboardPath = useCallback(() => {
-    if (!user) return '/student-login';
+    if (!user) return '/login';
     
     const roleMap = {
       admin: '/admin-dashboard',
