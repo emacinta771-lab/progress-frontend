@@ -7,10 +7,10 @@ const StudentRegister = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [step, setStep] = useState(1); // 1: Student Code, 2: Account Details
+  const [step, setStep] = useState(1); // 1: LIN Code, 2: Account Details
   
   const [formData, setFormData] = useState({
-    student_code: '',
+    student_code: '', // will hold the LIN Code value
     username: '',
     email: '',
     password: '',
@@ -158,24 +158,24 @@ const StudentRegister = () => {
           </div>
         )}
 
-        {/* Step 1: Student Code Verification */}
+        {/* Step 1: LIN Code Verification */}
         {step === 1 && (
           <form onSubmit={handleVerifyStudent}>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Student Code <span className="text-red-500">*</span>
+                LIN Code <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 name="student_code"
                 value={formData.student_code}
                 onChange={handleChange}
-                placeholder="Enter your student code (e.g., ST-001)"
+                placeholder="Enter your LIN Code (e.g., LIN-2024-00123)"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#135D66] focus:border-[#135D66] transition"
                 required
               />
               <p className="text-xs text-gray-500 mt-1">
-                Ask your teacher or check your student ID card for your code
+                Ask your teacher for your LIN Code
               </p>
             </div>
 

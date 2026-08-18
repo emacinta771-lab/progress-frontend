@@ -1,752 +1,489 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { studentAPI } from '../services/api';
 
+const calcAge = (dob) => {
+  if (!dob) return '';
+  return Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+};
+
+const STEPS = [
+  'Identification',
+  'Personal Details',
+  'Location',
+  'Background & ECD',
+  'Academic',
+  'Parent / Guardian',
+  'Emergency Contact',
+];
+
+const EMPTY = {
+  lin_code: '',
+  submission_date: new Date().toISOString().split('T')[0],
+  first_name: '',
+  last_name: '',
+  middle_name: '',
+  date_of_birth: '',
+  age: '',
+  gender: 'Male',
+  village: '',
+  location: '',
+  district: '',
+  division: '',
+  traditional_authority: '',
+  religious_denomination: '',
+  orphan_status: 'None',
+  special_needs: false,
+  special_needs_description: '',
+  ecd_attendance: 'No',
+  current_standard: 1,
+  current_class: 'A',
+  academic_year: `${new Date().getFullYear()}/${new Date().getFullYear() + 1}`,
+  enrollment_status: 'Active',
+  parent_name: '',
+  parent_phone: '',
+  parent_email: '',
+  parent_occupation: '',
+  parent_relationship: 'Father',
+  parent_village: '',
+  emergency_contact_name: '',
+  emergency_contact_phone: '',
+  emergency_contact_relationship: '',
+  notes: '',
+};
+
+// Field wrapper
+const F = ({ label, required, error, full, children }) => (
+  <div className={full ? 'col-span-2 sm:col-span-2' : 'col-span-2 sm:col-span-1'}>
+    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+      {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+    </label>
+    {children}
+    {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+  </div>
+);
+
+const fieldCls = (err) =>
+  `w-full px-3 py-2.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#135D66] transition ${
+    err ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-white'
+  }`;
+
+const Inp = ({ name, form, onChange, err, ...rest }) => (
+  <input name={name} value={form[name]} onChange={onChange}
+    className={fieldCls(err)} {...rest} />
+);
+
+const Sel = ({ name, form, onChange, options }) => (
+  <select name={name} value={form[name]} onChange={onChange} className={fieldCls(false)}>
+    {options.map(o => {
+      const val = typeof o === 'object' ? o.value : o;
+      const lbl = typeof o === 'object' ? o.label : o;
+      return <option key={val} value={val}>{lbl}</option>;
+    })}
+  </select>
+);
+
 const StudentForm = ({ onSuccess }) => {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [step, setStep]       = useState(0);
+  const [form, setForm]       = useState(EMPTY);
+  const [errors, setErrors]   = useState({});
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  
-  const [formData, setFormData] = useState({
-    student_code: '',
-    student_id: '',
-    first_name: '',
-    last_name: '',
-    middle_name: '',
-    date_of_birth: '',
-    gender: 'Male',
-    phone: '',
-    village: '',
-    traditional_authority: '',
-    district: '',
-    division: '',
-    parent_name: '',
-    parent_phone: '',
-    parent_email: '',
-    parent_occupation: '',
-    parent_relationship: 'Father',
-    parent_village: '',
-    current_standard: 1,
-    current_class: 'A',
-    academic_year: new Date().getFullYear() + '/' + (new Date().getFullYear() + 1),
-    emergency_contact_name: '',
-    emergency_contact_phone: '',
-    emergency_contact_relationship: '',
-    total_fees: 0,
-    fee_payment_plan: 'Full',
-    scholarship_type: 'None',
-    has_uniform: false,
-    has_textbooks: false,
-    meals_program: 'None',
-    notes: ''
-  });
+  const [toast, setToast]     = useState(null);
 
-  const totalSteps = 5;
-
-  const steps = [
-    { number: 1, title: 'Personal Info' },
-    { number: 2, title: 'Parent/Guardian' },
-    { number: 3, title: 'Academic' },
-    { number: 4, title: 'Emergency & Finance' },
-    { number: 5, title: 'Additional' }
-  ];
+  useEffect(() => {
+    if (form.date_of_birth) {
+      setForm(prev => ({ ...prev, age: calcAge(form.date_of_birth) }));
+    }
+  }, [form.date_of_birth]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    setForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-  const nextStep = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+  const showToast = (type, msg) => {
+    setToast({ type, msg });
+    setTimeout(() => setToast(null), 4000);
   };
 
-  const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+  const validateStep = (s) => {
+    const e = {};
+    if (s === 0 && !form.lin_code.trim()) e.lin_code = 'LIN Code is required';
+    if (s === 1) {
+      if (!form.first_name.trim()) e.first_name = 'First name is required';
+      if (!form.last_name.trim())  e.last_name  = 'Surname is required';
+      if (!form.date_of_birth)     e.date_of_birth = 'Date of birth is required';
     }
+    if (s === 2 && !form.district.trim()) e.district = 'District is required';
+    if (s === 5) {
+      if (!form.parent_name.trim())  e.parent_name  = 'Parent name is required';
+      if (!form.parent_phone.trim()) e.parent_phone = 'Parent phone is required';
+    }
+    if (s === 6) {
+      if (!form.emergency_contact_name.trim())  e.emergency_contact_name  = 'Emergency contact is required';
+      if (!form.emergency_contact_phone.trim()) e.emergency_contact_phone = 'Emergency phone is required';
+    }
+    return e;
+  };
+
+  const next = () => {
+    const e = validateStep(step);
+    if (Object.keys(e).length) { setErrors(e); return; }
+    setErrors({});
+    setStep(s => s + 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const back = () => {
+    setErrors({});
+    setStep(s => s - 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const errs = validateStep(6);
+    if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true);
-    setError('');
-    setSuccess('');
-
     try {
-      // Generate student_id if not provided
-      const studentId = formData.student_id || `STD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-      
-      // Prepare the data to match exactly what the database expects
-      const submitData = {
-        student_code: formData.student_code || studentId,
-        student_id: studentId,
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        middle_name: formData.middle_name || null,
-        date_of_birth: formData.date_of_birth,
-        gender: formData.gender,
-        phone: formData.phone || null,
-        village: formData.village || null,
-        traditional_authority: formData.traditional_authority || null,
-        district: formData.district,
-        division: formData.division || null,
-        parent_name: formData.parent_name,
-        parent_phone: formData.parent_phone,
-        parent_email: formData.parent_email || null,
-        parent_occupation: formData.parent_occupation || null,
-        parent_relationship: formData.parent_relationship,
-        parent_village: formData.parent_village || null,
-        current_standard: parseInt(formData.current_standard),
-        current_class: formData.current_class || null,
-        enrollment_date: new Date().toISOString().split('T')[0],
-        academic_year: formData.academic_year,
-        enrollment_status: 'Active',
+      const studentId = `STD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      await studentAPI.create({
+        ...form,
+        student_id:              studentId,
+        student_code:            form.lin_code.trim(),
+        lin_code:                form.lin_code.trim(),
+        age:                     form.age ? parseInt(form.age) : calcAge(form.date_of_birth),
+        current_standard:        parseInt(form.current_standard),
+        total_fees:              0,
+        amount_paid:             0,
+        outstanding_balance:     0,
+        fee_payment_plan:        'Full',
+        scholarship_type:        'None',
+        has_uniform:             false,
+        has_textbooks:           false,
+        meals_program:           'None',
+        financial_hold:          false,
+        enrollment_date:         new Date().toISOString().split('T')[0],
         previous_grade_promoted: true,
-        performance_level: 'Satisfactory',
-        blood_type: null,
-        allergies: null,
-        medical_conditions: null,
-        emergency_contact_name: formData.emergency_contact_name,
-        emergency_contact_phone: formData.emergency_contact_phone,
-        emergency_contact_relationship: formData.emergency_contact_relationship || null,
-        total_fees: parseFloat(formData.total_fees) || 0,
-        amount_paid: 0,
-        outstanding_balance: parseFloat(formData.total_fees) || 0,
-        fee_payment_plan: formData.fee_payment_plan,
-        scholarship_type: formData.scholarship_type,
-        financial_hold: false,
-        has_uniform: formData.has_uniform,
-        has_textbooks: formData.has_textbooks,
-        meals_program: formData.meals_program,
-        notes: formData.notes || null
-      };
-
-      console.log('Submitting data:', submitData);
-
-      const response = await studentAPI.create(submitData);
-      console.log('Response:', response);
-      
-      setSuccess('Student registered successfully!');
-      
-      // Reset form
-      setFormData({
-        student_code: '',
-        student_id: '',
-        first_name: '',
-        last_name: '',
-        middle_name: '',
-        date_of_birth: '',
-        gender: 'Male',
-        phone: '',
-        village: '',
-        traditional_authority: '',
-        district: '',
-        division: '',
-        parent_name: '',
-        parent_phone: '',
-        parent_email: '',
-        parent_occupation: '',
-        parent_relationship: 'Father',
-        parent_village: '',
-        current_standard: 1,
-        current_class: 'A',
-        academic_year: new Date().getFullYear() + '/' + (new Date().getFullYear() + 1),
-        emergency_contact_name: '',
-        emergency_contact_phone: '',
-        emergency_contact_relationship: '',
-        total_fees: 0,
-        fee_payment_plan: 'Full',
-        scholarship_type: 'None',
-        has_uniform: false,
-        has_textbooks: false,
-        meals_program: 'None',
-        notes: ''
+        performance_level:       'Satisfactory',
+        blood_type:              null,
+        allergies:               null,
+        medical_conditions:      null,
       });
-      setCurrentStep(1);
+      showToast('success', 'Student registered successfully!');
+      setForm(EMPTY);
+      setErrors({});
+      setStep(0);
       if (onSuccess) onSuccess();
     } catch (err) {
-      console.error('Registration error:', err);
-      setError(err.response?.data?.error || 'Failed to register student');
+      showToast('error', err.response?.data?.error || 'Registration failed.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Render step content
-  const renderStepContent = () => {
-    switch(currentStep) {
-      case 1:
-        return (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Student Code <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="student_code"
-                value={formData.student_code}
-                onChange={handleChange}
-                placeholder="e.g., ST-001"
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Student ID
-              </label>
-              <input
-                type="text"
-                name="student_id"
-                value={formData.student_id}
-                onChange={handleChange}
-                placeholder="Auto-generated if left blank"
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                First Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="first_name"
-                value={formData.first_name}
-                onChange={handleChange}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Last Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="last_name"
-                value={formData.last_name}
-                onChange={handleChange}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Middle Name</label>
-              <input
-                type="text"
-                name="middle_name"
-                value={formData.middle_name}
-                onChange={handleChange}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Date of Birth <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="date"
-                name="date_of_birth"
-                value={formData.date_of_birth}
-                onChange={handleChange}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Gender <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="gender"
-                value={formData.gender}
-                onChange={handleChange}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-                required
-              >
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Phone</label>
-              <input
-                type="text"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder="+265 888 123 456"
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Village</label>
-              <input
-                type="text"
-                name="village"
-                value={formData.village}
-                onChange={handleChange}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Traditional Authority</label>
-              <input
-                type="text"
-                name="traditional_authority"
-                value={formData.traditional_authority}
-                onChange={handleChange}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                District <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="district"
-                value={formData.district}
-                onChange={handleChange}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Division</label>
-              <input
-                type="text"
-                name="division"
-                value={formData.division}
-                onChange={handleChange}
-                placeholder="Optional"
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-              />
-            </div>
-          </div>
-        );
+  // Step panels — all grids use col-span-2/col-span-1 so on mobile everything
+  // is full width (grid is 2 cols, F defaults to col-span-2 = full width on
+  // mobile via the outer grid being 1 col on xs, 2 on sm)
+  const panels = [
 
-      case 2:
-        return (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Parent/Guardian Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="parent_name"
-                value={formData.parent_name}
-                onChange={handleChange}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Parent Phone <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="parent_phone"
-                value={formData.parent_phone}
-                onChange={handleChange}
-                placeholder="+265 888 123 456"
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Parent Email</label>
-              <input
-                type="email"
-                name="parent_email"
-                value={formData.parent_email}
-                onChange={handleChange}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Parent Occupation</label>
-              <input
-                type="text"
-                name="parent_occupation"
-                value={formData.parent_occupation}
-                onChange={handleChange}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Relationship <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="parent_relationship"
-                value={formData.parent_relationship}
-                onChange={handleChange}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-                required
-              >
-                <option value="Father">Father</option>
-                <option value="Mother">Mother</option>
-                <option value="Guardian">Guardian</option>
-                <option value="Grandparent">Grandparent</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Parent Village</label>
-              <input
-                type="text"
-                name="parent_village"
-                value={formData.parent_village}
-                onChange={handleChange}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-              />
-            </div>
-          </div>
-        );
+    // 0 — Identification
+    <div key="id" className="grid grid-cols-2 gap-4">
+      <F label="LIN Code" required error={errors.lin_code}>
+        <Inp name="lin_code" form={form} onChange={handleChange} err={errors.lin_code}
+          placeholder="e.g. LIN-2024-00123" />
+      </F>
+      <F label="Date of Submission">
+        <Inp name="submission_date" form={form} onChange={handleChange} err={false} type="date" />
+      </F>
+    </div>,
 
-      case 3:
-        return (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Current Standard <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="current_standard"
-                value={formData.current_standard}
-                onChange={handleChange}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-                required
-              >
-                {[1,2,3,4,5,6,7,8].map(std => (
-                  <option key={std} value={std}>Standard {std}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Class</label>
-              <select
-                name="current_class"
-                value={formData.current_class}
-                onChange={handleChange}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-              >
-                <option value="A">A</option>
-                <option value="B">B</option>
-                <option value="C">C</option>
-                <option value="D">D</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Academic Year <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="academic_year"
-                value={formData.academic_year}
-                onChange={handleChange}
-                placeholder="e.g., 2024/2025"
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-                required
-              />
-            </div>
-          </div>
-        );
+    // 1 — Personal Details
+    <div key="personal" className="grid grid-cols-2 gap-4">
+      <F label="Surname" required error={errors.last_name}>
+        <Inp name="last_name" form={form} onChange={handleChange} err={errors.last_name}
+          placeholder="Family name" />
+      </F>
+      <F label="First Name" required error={errors.first_name}>
+        <Inp name="first_name" form={form} onChange={handleChange} err={errors.first_name}
+          placeholder="Given name" />
+      </F>
+      <F label="Middle Name">
+        <Inp name="middle_name" form={form} onChange={handleChange} err={false}
+          placeholder="Optional" />
+      </F>
+      <F label="Date of Birth" required error={errors.date_of_birth}>
+        <Inp name="date_of_birth" form={form} onChange={handleChange}
+          err={errors.date_of_birth} type="date" />
+      </F>
+      <F label="Age">
+        <input value={form.age} readOnly placeholder="Auto-calculated"
+          className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-400 cursor-not-allowed" />
+      </F>
+      <F label="Sex" required>
+        <Sel name="gender" form={form} onChange={handleChange} options={['Male','Female']} />
+      </F>
+    </div>,
 
-      case 4:
-        return (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Emergency Contact Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="emergency_contact_name"
-                value={formData.emergency_contact_name}
-                onChange={handleChange}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Emergency Contact Phone <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="emergency_contact_phone"
-                value={formData.emergency_contact_phone}
-                onChange={handleChange}
-                placeholder="+265 888 123 456"
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Relationship</label>
-              <input
-                type="text"
-                name="emergency_contact_relationship"
-                value={formData.emergency_contact_relationship}
-                onChange={handleChange}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Total Fees (MK)</label>
-              <input
-                type="number"
-                name="total_fees"
-                value={formData.total_fees}
-                onChange={handleChange}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Payment Plan</label>
-              <select
-                name="fee_payment_plan"
-                value={formData.fee_payment_plan}
-                onChange={handleChange}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-              >
-                <option value="Full">Full</option>
-                <option value="Termly">Termly</option>
-                <option value="Monthly">Monthly</option>
-                <option value="Installment">Installment</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Scholarship</label>
-              <select
-                name="scholarship_type"
-                value={formData.scholarship_type}
-                onChange={handleChange}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-              >
-                <option value="None">None</option>
-                <option value="Government">Government</option>
-                <option value="NGO">NGO</option>
-                <option value="Church">Church</option>
-                <option value="Corporate">Corporate</option>
-                <option value="Individual">Individual</option>
-                <option value="Merit">Merit</option>
-              </select>
-            </div>
-          </div>
-        );
+    // 2 — Location
+    <div key="location" className="grid grid-cols-2 gap-4">
+      <F label="Village / Location">
+        <Inp name="village" form={form} onChange={handleChange} err={false}
+          placeholder="Village or area" />
+      </F>
+      <F label="Additional Location">
+        <Inp name="location" form={form} onChange={handleChange} err={false}
+          placeholder="Zone, neighbourhood" />
+      </F>
+      <F label="District of Origin" required error={errors.district}>
+        <Inp name="district" form={form} onChange={handleChange} err={errors.district}
+          placeholder="e.g. Lilongwe" />
+      </F>
+      <F label="Division">
+        <Inp name="division" form={form} onChange={handleChange} err={false}
+          placeholder="e.g. Central" />
+      </F>
+      <F label="Traditional Authority" full>
+        <Inp name="traditional_authority" form={form} onChange={handleChange} err={false}
+          placeholder="T/A name" />
+      </F>
+    </div>,
 
-      case 5:
-        return (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="flex items-center gap-3 p-2 bg-gray-50 rounded">
-              <input
-                type="checkbox"
-                name="has_uniform"
-                checked={formData.has_uniform}
-                onChange={handleChange}
-                className="w-4 h-4 text-[#77B0AA] focus:ring-[#77B0AA] rounded"
-              />
-              <label className="text-sm text-gray-700">Has Uniform</label>
-            </div>
-            
-            <div className="flex items-center gap-3 p-2 bg-gray-50 rounded">
-              <input
-                type="checkbox"
-                name="has_textbooks"
-                checked={formData.has_textbooks}
-                onChange={handleChange}
-                className="w-4 h-4 text-[#77B0AA] focus:ring-[#77B0AA] rounded"
-              />
-              <label className="text-sm text-gray-700">Has Textbooks</label>
-            </div>
-            
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Meals Program</label>
-              <select
-                name="meals_program"
-                value={formData.meals_program}
-                onChange={handleChange}
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-              >
-                <option value="None">None</option>
-                <option value="Full">Full</option>
-                <option value="Partial">Partial</option>
-              </select>
-            </div>
-            
-            <div className="col-span-1 md:col-span-2">
-              <label className="block text-xs font-medium text-gray-700 mb-1">Notes</label>
-              <textarea
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-                rows="3"
-                className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-[#77B0AA] focus:border-[#77B0AA] transition"
-                placeholder="Any additional notes..."
-              />
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="bg-white rounded-xl shadow-lg p-6 max-w-6xl mx-auto">
-      {/* Navigation Pane - Back to Dashboard */}
-      <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
-        <button
-          onClick={() => navigate('/teacher-dashboard')}
-          className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#77B0AA] transition-colors duration-200"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Back to Dashboard
-        </button>
-        <div className="text-xs text-gray-400">
-          {currentStep} of {totalSteps} steps
-        </div>
-      </div>
-
-      {/* Header */}
-      <div className="bg-[#77B0AA] text-white px-6 py-4 rounded-t-lg -mt-6 -mx-6 mb-6">
-        <h2 className="text-2xl font-bold">
-          Register New Student
-        </h2>
-        <p className="text-white/80 text-sm mt-1">
-          Step {currentStep} of {totalSteps} - {steps[currentStep - 1].title}
-        </p>
-      </div>
-      
-      {/* Progress Steps */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between relative">
-          <div className="absolute left-0 right-0 top-1/2 h-1 bg-gray-200 -translate-y-1/2"></div>
-          
-          <div 
-            className="absolute left-0 top-1/2 h-1 bg-[#77B0AA] -translate-y-1/2 transition-all duration-500"
-            style={{ width: `${((currentStep - 1) / (totalSteps - 1)) * 100}%` }}
-          ></div>
-          
-          {steps.map((step) => (
-            <div key={step.number} className="flex flex-col items-center relative z-10">
-              <button
-                onClick={() => setCurrentStep(step.number)}
-                className={`
-                  w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-300
-                  ${currentStep >= step.number 
-                    ? 'bg-[#77B0AA] text-white shadow-md' 
-                    : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
-                  }
-                  ${currentStep === step.number ? 'ring-3 ring-[#77B0AA]/30 scale-105' : ''}
-                `}
-              >
-                {currentStep > step.number ? '✓' : step.number}
-              </button>
-              <span className={`text-[10px] mt-1.5 font-medium ${currentStep >= step.number ? 'text-[#77B0AA]' : 'text-gray-400'}`}>
-                {step.title}
-              </span>
-            </div>
+    // 3 — Background & ECD
+    <div key="background" className="grid grid-cols-2 gap-4">
+      <F label="Religious Denomination">
+        <Sel name="religious_denomination" form={form} onChange={handleChange} options={[
+          { value: '', label: '-- Select --' },
+          'Catholic','CCAP','Anglican','Seventh Day Adventist',
+          'Baptist','Pentecostal','Islam','Other Christian',
+          'Traditional','None','Other',
+        ]} />
+      </F>
+      <F label="Orphan Status">
+        <Sel name="orphan_status" form={form} onChange={handleChange} options={[
+          { value: 'None',   label: 'Not an orphan' },
+          { value: 'Single', label: 'Single orphan' },
+          { value: 'Double', label: 'Double orphan' },
+        ]} />
+      </F>
+      <F label="Special Needs">
+        <div className="flex gap-6 pt-1">
+          {[{ val: true, label: 'Yes' }, { val: false, label: 'No' }].map(opt => (
+            <label key={opt.label} className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="special_needs_radio"
+                checked={form.special_needs === opt.val}
+                onChange={() => setForm(p => ({ ...p, special_needs: opt.val }))}
+                className="w-4 h-4 accent-[#135D66]" />
+              <span className="text-sm text-gray-700">{opt.label}</span>
+            </label>
           ))}
         </div>
+      </F>
+      {form.special_needs && (
+        <F label="Special Needs Description">
+          <Inp name="special_needs_description" form={form} onChange={handleChange} err={false}
+            placeholder="Describe the special need" />
+        </F>
+      )}
+      <F label="ECD Attendance">
+        <div className="flex gap-6 pt-1">
+          {['Yes', 'No'].map(opt => (
+            <label key={opt} className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="ecd_attendance" value={opt}
+                checked={form.ecd_attendance === opt} onChange={handleChange}
+                className="w-4 h-4 accent-[#135D66]" />
+              <span className="text-sm text-gray-700">{opt}</span>
+            </label>
+          ))}
+        </div>
+      </F>
+    </div>,
+
+    // 4 — Academic
+    <div key="academic" className="grid grid-cols-2 gap-4">
+      <F label="Standard" required>
+        <Sel name="current_standard" form={form} onChange={handleChange}
+          options={[1,2,3,4,5,6,7,8].map(n => ({ value: n, label: `Standard ${n}` }))} />
+      </F>
+      <F label="Class">
+        <Sel name="current_class" form={form} onChange={handleChange} options={['A','B','C','D']} />
+      </F>
+      <F label="Academic Year" required>
+        <Inp name="academic_year" form={form} onChange={handleChange} err={false}
+          placeholder="e.g. 2025/2026" />
+      </F>
+      <F label="Enrollment Status">
+        <Sel name="enrollment_status" form={form} onChange={handleChange}
+          options={['Active','Inactive','Suspended']} />
+      </F>
+    </div>,
+
+    // 5 — Parent / Guardian
+    <div key="parent" className="grid grid-cols-2 gap-4">
+      <F label="Full Name" required error={errors.parent_name}>
+        <Inp name="parent_name" form={form} onChange={handleChange} err={errors.parent_name}
+          placeholder="Parent or guardian name" />
+      </F>
+      <F label="Phone" required error={errors.parent_phone}>
+        <Inp name="parent_phone" form={form} onChange={handleChange} err={errors.parent_phone}
+          placeholder="+265 888 000 000" />
+      </F>
+      <F label="Relationship" required>
+        <Sel name="parent_relationship" form={form} onChange={handleChange}
+          options={['Father','Mother','Guardian','Grandparent','Uncle','Aunt','Other']} />
+      </F>
+      <F label="Email">
+        <Inp name="parent_email" form={form} onChange={handleChange} err={false}
+          type="email" placeholder="Optional" />
+      </F>
+      <F label="Occupation">
+        <Inp name="parent_occupation" form={form} onChange={handleChange} err={false}
+          placeholder="e.g. Farmer, Teacher" />
+      </F>
+      <F label="Parent Village">
+        <Inp name="parent_village" form={form} onChange={handleChange} err={false} />
+      </F>
+    </div>,
+
+    // 6 — Emergency Contact
+    <div key="emergency" className="grid grid-cols-2 gap-4">
+      <F label="Contact Name" required error={errors.emergency_contact_name}>
+        <Inp name="emergency_contact_name" form={form} onChange={handleChange}
+          err={errors.emergency_contact_name} />
+      </F>
+      <F label="Contact Phone" required error={errors.emergency_contact_phone}>
+        <Inp name="emergency_contact_phone" form={form} onChange={handleChange}
+          err={errors.emergency_contact_phone} placeholder="+265 888 000 000" />
+      </F>
+      <F label="Relationship to Student" full>
+        <Inp name="emergency_contact_relationship" form={form} onChange={handleChange} err={false}
+          placeholder="e.g. Uncle, Aunt" />
+      </F>
+      <F label="Notes" full>
+        <textarea name="notes" value={form.notes} onChange={handleChange} rows={3}
+          placeholder="Any additional remarks about this student..."
+          className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#135D66] transition resize-none bg-white" />
+      </F>
+    </div>,
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white
+          ${toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'}`}>
+          {toast.msg}
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="bg-[#003C43] text-white px-4 sm:px-6 py-4 sm:py-5">
+        <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-lg font-bold tracking-tight truncate">
+              Student Admission Form
+            </h1>
+            <p className="text-white/50 text-xs mt-0.5 hidden sm:block">Register a new learner</p>
+          </div>
+          <button onClick={() => navigate('/teacher-dashboard')}
+            className="shrink-0 text-xs border border-white/30 text-white/80 hover:text-white px-3 py-1.5 rounded transition whitespace-nowrap">
+            Back
+          </button>
+        </div>
       </div>
-      
-      {/* Error & Success Messages */}
-      {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-4 rounded">
-          <p className="text-red-700 text-sm">{error}</p>
-        </div>
-      )}
-      
-      {success && (
-        <div className="bg-green-50 border-l-4 border-green-500 p-3 mb-4 rounded">
-          <p className="text-green-700 text-sm">{success}</p>
-        </div>
-      )}
 
-      <form onSubmit={handleSubmit}>
-        {/* Step Content */}
-        <div className="mb-6">
-          {renderStepContent()}
-        </div>
+      <div className="max-w-2xl mx-auto px-3 sm:px-6 py-5 sm:py-8">
 
-        {/* Navigation Buttons */}
-        <div className="flex flex-col sm:flex-row justify-between gap-3 pt-4 border-t border-gray-200">
-          <div>
-            {currentStep > 1 && (
-              <button
-                type="button"
-                onClick={prevStep}
-                className="px-5 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition font-medium text-sm"
-              >
-                Previous
-              </button>
-            )}
-          </div>
-          
-          <div className="flex gap-3">
-            {currentStep < totalSteps ? (
-              <button
-                type="button"
-                onClick={nextStep}
-                className="px-5 py-2 bg-[#77B0AA] text-white rounded hover:bg-[#5c9a94] transition font-medium text-sm"
-              >
-                Next
-              </button>
-            ) : (
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-5 py-2 bg-[#77B0AA] text-white rounded hover:bg-[#5c9a94] transition disabled:opacity-50 font-medium text-sm"
-              >
-                {loading ? 'Registering...' : 'Register Student'}
-              </button>
-            )}
+        {/* Step progress — numbers only on mobile, labels on sm+ */}
+        <div className="mb-6 sm:mb-8 overflow-x-auto">
+          <div className="flex items-start min-w-max sm:min-w-0 px-1">
+            {STEPS.map((label, i) => (
+              <React.Fragment key={i}>
+                <div className="flex flex-col items-center shrink-0">
+                  <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors
+                    ${i < step    ? 'bg-[#135D66] border-[#135D66] text-white'
+                    : i === step  ? 'bg-white border-[#135D66] text-[#135D66]'
+                    : 'bg-white border-gray-300 text-gray-400'}`}>
+                    {i < step ? '✓' : i + 1}
+                  </div>
+                  <span className={`text-[9px] sm:text-[10px] mt-1 text-center w-14 sm:w-16 leading-tight hidden sm:block
+                    ${i === step ? 'text-[#135D66] font-semibold' : 'text-gray-400'}`}>
+                    {label}
+                  </span>
+                </div>
+                {i < STEPS.length - 1 && (
+                  <div className={`flex-1 h-0.5 mx-1 mt-3 sm:mb-5 transition-colors
+                    ${i < step ? 'bg-[#135D66]' : 'bg-gray-200'}`} />
+                )}
+              </React.Fragment>
+            ))}
           </div>
         </div>
-      </form>
+
+        {/* Current step label on mobile */}
+        <p className="sm:hidden text-xs text-gray-400 uppercase tracking-widest font-semibold mb-3 text-center">
+          Step {step + 1} of {STEPS.length} &mdash; {STEPS[step]}
+        </p>
+
+        {/* Card */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+
+          {/* Card header — hidden on mobile (shown as text above) */}
+          <div className="hidden sm:block px-6 py-4 border-b border-gray-100">
+            <p className="text-[11px] text-gray-400 uppercase tracking-widest font-semibold">
+              Step {step + 1} of {STEPS.length}
+            </p>
+            <h2 className="text-base font-bold text-gray-800 mt-0.5">{STEPS[step]}</h2>
+          </div>
+
+          <form onSubmit={handleSubmit} noValidate>
+            {/* Fields */}
+            <div className="px-4 sm:px-6 py-5 sm:py-6">
+              {panels[step]}
+            </div>
+
+            {/* Navigation bar */}
+            <div className="px-4 sm:px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-xl
+              flex items-center justify-between gap-3">
+              <button type="button" onClick={back} disabled={step === 0}
+                className="px-4 sm:px-5 py-2 border border-gray-300 text-gray-600 text-sm font-medium rounded-lg
+                  hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition min-w-[72px]">
+                Back
+              </button>
+
+              <span className="text-xs text-gray-400 tabular-nums shrink-0">
+                {step + 1} / {STEPS.length}
+              </span>
+
+              {step < STEPS.length - 1 ? (
+                <button type="button" onClick={next}
+                  className="px-4 sm:px-6 py-2 bg-[#135D66] hover:bg-[#0e4a52] text-white text-sm
+                    font-semibold rounded-lg transition min-w-[72px]">
+                  Next
+                </button>
+              ) : (
+                <button type="submit" disabled={loading}
+                  className="px-4 sm:px-6 py-2 bg-[#003C43] hover:bg-[#135D66] disabled:opacity-50
+                    text-white text-sm font-semibold rounded-lg transition flex items-center gap-2 min-w-[110px] justify-center">
+                  {loading && (
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  )}
+                  {loading ? 'Saving...' : 'Register'}
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+
+        <p className="text-xs text-gray-400 mt-3 text-center">
+          Fields marked <span className="text-red-500 font-bold">*</span> are required
+        </p>
+
+      </div>
     </div>
   );
 };
