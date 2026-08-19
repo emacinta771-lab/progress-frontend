@@ -11,10 +11,6 @@ const NAV_ITEMS = [
   { title: 'My Class',    path: '/my-class' },
 ];
 
-/**
- * Shared top navigation bar for all teacher-facing pages.
- * Usage:  <TeacherNav />
- */
 const TeacherNav = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -27,44 +23,57 @@ const TeacherNav = () => {
 
   return (
     <>
-      {/* Header */}
-      <div className="bg-[#003C43] text-white px-4 sm:px-6 py-4">
+      {/* ── Top header bar ─────────────────────────────────────────────── */}
+      <div className="bg-[#003C43] text-white px-4 sm:px-6 py-3.5">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-base sm:text-lg font-bold tracking-tight truncate">
+            <h1 className="text-sm sm:text-base font-bold tracking-tight truncate leading-tight">
               Teacher Portal
             </h1>
-            <p className="text-white/50 text-xs mt-0.5 hidden sm:block">
-              Academic Year 2026
+            <p className="text-white/45 text-[11px] mt-0.5 hidden sm:block">
+              {user?.first_name} &nbsp;&mdash;&nbsp; Academic Year 2026
             </p>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs text-white/60 hidden md:block">{user?.first_name}</span>
-            <button
-              onClick={handleLogout}
-              className="text-xs border border-white/30 text-white/80 hover:text-white px-3 py-1.5 rounded transition"
-            >
-              Logout
-            </button>
-          </div>
+          <button
+            onClick={handleLogout}
+            className="shrink-0 flex items-center gap-1.5 text-xs font-semibold
+              bg-white/10 hover:bg-white/20 border border-white/25 text-white
+              px-3.5 py-1.5 rounded-lg transition"
+          >
+            {/* logout icon */}
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span className="hidden sm:inline">Logout</span>
+          </button>
         </div>
       </div>
 
-      {/* Nav bar */}
-      <nav className="bg-[#135D66] text-white sticky top-0 z-50 shadow-md">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 flex items-center h-11 overflow-x-auto gap-0.5">
-          {NAV_ITEMS.map(item => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition shrink-0
-                ${pathname === item.path
-                  ? 'bg-white/20 text-white'
-                  : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
-            >
-              {item.title}
-            </Link>
-          ))}
+      {/* ── Navigation button bar ──────────────────────────────────────── */}
+      <nav className="bg-[#135D66] sticky top-0 z-50 shadow-md border-b border-[#0e4a52]">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6">
+          <div className="flex items-center gap-1 h-12 overflow-x-auto scrollbar-none">
+            {NAV_ITEMS.map(item => {
+              const active = pathname === item.path;
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`
+                    shrink-0 flex items-center px-4 py-1.5 rounded-lg
+                    text-xs font-bold whitespace-nowrap transition-all duration-150
+                    ${active
+                      ? 'bg-white text-[#003C43] shadow-sm'
+                      : 'text-white/75 hover:bg-white/15 hover:text-white border border-transparent hover:border-white/20'
+                    }
+                  `}
+                >
+                  {item.title}
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </nav>
     </>
