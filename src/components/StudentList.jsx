@@ -320,7 +320,7 @@ const StudentList = () => {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
-                        <Link to={`/students/${student.student_id}`}
+                        <Link to={`/students/${student.student_id || student.id}`}
                           className="px-2.5 py-1 text-xs bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition font-medium">
                           View
                         </Link>
