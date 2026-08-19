@@ -2,6 +2,170 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { studentAPI } from '../services/api';
 
+const formatValue = (value, fallback = 'N/A') => {
+  if (value === null || value === undefined || value === '') return fallback;
+  return value;
+};
+
+const buildStudentProfileDocument = (student) => {
+  const fullName = [student.first_name, student.middle_name, student.last_name]
+    .filter(Boolean)
+    .join(' ');
+
+  const profileFields = [
+    ['LIN Code', student.lin_code || student.student_code || student.student_id || 'N/A'],
+    ['Student ID', student.student_id || 'N/A'],
+    ['Full Name', fullName || 'N/A'],
+    ['Date of Birth', student.date_of_birth ? new Date(student.date_of_birth).toLocaleDateString('en-GB') : 'N/A'],
+    ['Age', student.age || 'N/A'],
+    ['Gender', formatValue(student.gender)],
+    ['Village', formatValue(student.village)],
+    ['Location', formatValue(student.location)],
+    ['District', formatValue(student.district)],
+    ['Division', formatValue(student.division)],
+    ['Traditional Authority', formatValue(student.traditional_authority)],
+    ['Religious Denomination', formatValue(student.religious_denomination)],
+    ['Orphan Status', formatValue(student.orphan_status)],
+    ['Special Needs', student.special_needs ? formatValue(student.special_needs_description, 'Yes') : 'No'],
+    ['ECD Attendance', formatValue(student.ecd_attendance)],
+    ['Current Standard', student.current_standard ? `Standard ${student.current_standard}` : 'N/A'],
+    ['Class', formatValue(student.current_class)],
+    ['Academic Year', formatValue(student.academic_year)],
+    ['Enrollment Status', formatValue(student.enrollment_status)],
+    ['Parent / Guardian Name', formatValue(student.parent_name)],
+    ['Parent / Guardian Phone', formatValue(student.parent_phone)],
+    ['Relationship', formatValue(student.parent_relationship)],
+    ['Parent Email', formatValue(student.parent_email)],
+    ['Parent Occupation', formatValue(student.parent_occupation)],
+    ['Parent Village', formatValue(student.parent_village)],
+    ['Submission Date', student.submission_date ? new Date(student.submission_date).toLocaleDateString('en-GB') : 'N/A'],
+    ['Notes', formatValue(student.notes)],
+  ];
+
+  const rows = profileFields.map(([label, value]) => `
+    <tr>
+      <th>${label}</th>
+      <td>${value}</td>
+    </tr>
+  `).join('');
+
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Student Profile - ${fullName || 'Learner'}</title>
+        <style>
+          @page {
+            size: A4 landscape;
+            margin: 12mm;
+          }
+
+          * { box-sizing: border-box; }
+
+          body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #1f2937;
+            background: #ffffff;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          .page {
+            width: 100%;
+            min-height: 100vh;
+            padding: 18px 20px 10px;
+          }
+
+          .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            border-bottom: 2px solid #003C43;
+            padding-bottom: 10px;
+            margin-bottom: 18px;
+          }
+
+          h1 {
+            margin: 0;
+            font-size: 28px;
+            color: #003C43;
+          }
+
+          .subtitle {
+            margin: 4px 0 0;
+            color: #4b5563;
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+          }
+
+          .summary {
+            text-align: right;
+            font-size: 12px;
+            color: #4b5563;
+          }
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+          }
+
+          th, td {
+            border: 1px solid #d1d5db;
+            padding: 8px 10px;
+            text-align: left;
+            vertical-align: top;
+          }
+
+          th {
+            width: 30%;
+            background: #f3f4f6;
+            color: #374151;
+            font-weight: 700;
+          }
+
+          td {
+            background: #ffffff;
+          }
+
+          .highlight {
+            background: #e7f3f4;
+            font-weight: 700;
+          }
+
+          @media print {
+            body { margin: 0; }
+            .page { padding: 0; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="page">
+          <div class="header">
+            <div>
+              <h1>Child Profile</h1>
+              <p class="subtitle">Student Record</p>
+            </div>
+            <div class="summary">
+              <div>Generated:</div>
+              <strong>${new Date().toLocaleDateString('en-GB')}</strong>
+            </div>
+          </div>
+
+          <table>
+            <tbody>
+              ${rows}
+            </tbody>
+          </table>
+        </div>
+      </body>
+    </html>
+  `;
+};
+
 const StudentDetails = () => {
   const { studentId } = useParams();
   const navigate = useNavigate();
@@ -38,6 +202,21 @@ const StudentDetails = () => {
     }
   };
 
+  const handlePrintProfile = () => {
+    if (!student) return;
+
+    const printWindow = window.open('', '_blank', 'width=1200,height=800');
+    if (!printWindow) {
+      setError('Pop-up blocked. Allow pop-ups to print the child profile.');
+      return;
+    }
+
+    printWindow.document.write(buildStudentProfileDocument(student));
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => printWindow.print(), 300);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -61,7 +240,14 @@ const StudentDetails = () => {
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-[#003C43]">Student Details</h1>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={handlePrintProfile}
+            className="px-4 py-2 bg-[#135D66] text-white rounded-lg hover:bg-[#0e4a52] transition"
+          >
+            Print PDF
+          </button>
           <Link
             to={`/students/${studentId}/edit`}
             className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition"

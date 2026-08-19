@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { attendanceAPI, studentAPI, teacherAPI } from '../services/api';
 import { Link, useNavigate } from 'react-router-dom';
+import TeacherNav from './TeacherNav';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const initials = (s) => {
@@ -181,7 +182,6 @@ const TeacherDashboard = () => {
       setEditError(err.response?.data?.error || 'Failed to update student.');
     } finally { setSaving(false); }
   };
-
   const navItems = [
     { title: 'Dashboard',  path: '/teacher-dashboard' },
     { title: 'Students',   path: '/my-students' },
@@ -247,6 +247,7 @@ const TeacherDashboard = () => {
         </div>
       </nav>
 
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
         {/* Stats row */}

@@ -4,17 +4,30 @@ import { studentAPI } from '../services/api';
 import TeacherNav from './TeacherNav';
 
 const buildStudentTableMarkup = (students) => {
-  const rows = students.map((student, index) => `
-    <tr>
-      <td>${index + 1}</td>
-      <td>${student.lin_code || student.student_code || student.student_id || ''}</td>
-      <td>${student.first_name || ''} ${student.last_name || ''}</td>
-      <td>Standard ${student.current_standard || ''} ${student.current_class || ''}</td>
-      <td>${student.parent_name || 'N/A'}</td>
-      <td>${student.parent_phone || 'N/A'}</td>
-      <td>${student.enrollment_status || 'Active'}</td>
-    </tr>
-  `).join('');
+  const rows = students.map((student, index) => {
+    const fullName = [student.first_name, student.middle_name, student.last_name].filter(Boolean).join(' ');
+    const dob = student.date_of_birth ? new Date(student.date_of_birth).toLocaleDateString('en-GB') : 'N/A';
+    const age = student.age || 'N/A';
+    const classLabel = student.current_standard ? `Std ${student.current_standard}${student.current_class ? ` ${student.current_class}` : ''}` : 'N/A';
+
+    return `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${student.lin_code || student.student_code || student.student_id || 'N/A'}</td>
+        <td>${fullName || 'N/A'}</td>
+        <td>${dob}</td>
+        <td>${age}</td>
+        <td>${student.gender || 'N/A'}</td>
+        <td>${student.village || 'N/A'}</td>
+        <td>${student.district || 'N/A'}</td>
+        <td>${classLabel}</td>
+        <td>${student.academic_year || 'N/A'}</td>
+        <td>${student.parent_name || 'N/A'}</td>
+        <td>${student.parent_phone || 'N/A'}</td>
+        <td>${student.enrollment_status || 'Active'}</td>
+      </tr>
+    `;
+  }).join('');
 
   return `
     <table>
@@ -23,9 +36,15 @@ const buildStudentTableMarkup = (students) => {
           <th>#</th>
           <th>LIN Code</th>
           <th>Name</th>
+          <th>DOB</th>
+          <th>Age</th>
+          <th>Gender</th>
+          <th>Village</th>
+          <th>District</th>
           <th>Class</th>
-          <th>Parent</th>
-          <th>Phone</th>
+          <th>Academic Year</th>
+          <th>Parent/Guardian</th>
+          <th>Parent Phone</th>
           <th>Status</th>
         </tr>
       </thead>
@@ -43,12 +62,52 @@ const buildExportDocument = (students) => {
         <meta charset="utf-8" />
         <title>Learner List</title>
         <style>
-          body { font-family: Arial, sans-serif; padding: 24px; color: #1f2937; }
-          h1 { color: #003C43; margin-bottom: 4px; }
-          p { margin-top: 0; margin-bottom: 16px; color: #4b5563; }
-          table { width: 100%; border-collapse: collapse; font-size: 12px; }
-          th, td { border: 1px solid #d1d5db; padding: 8px; text-align: left; }
-          th { background: #f3f4f6; color: #374151; }
+          @page {
+            size: A4 landscape;
+            margin: 12mm;
+          }
+
+          body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            color: #1f2937;
+            background: #ffffff;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          h1 {
+            color: #003C43;
+            margin: 0 0 4px;
+            font-size: 28px;
+          }
+
+          p {
+            margin: 0 0 16px;
+            color: #4b5563;
+            font-size: 12px;
+          }
+
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+            table-layout: fixed;
+          }
+
+          th, td {
+            border: 1px solid #d1d5db;
+            padding: 7px 6px;
+            text-align: left;
+            word-wrap: break-word;
+            vertical-align: top;
+          }
+
+          th {
+            background: #f3f4f6;
+            color: #374151;
+            font-weight: 700;
+          }
         </style>
       </head>
       <body>
