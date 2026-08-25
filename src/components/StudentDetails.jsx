@@ -146,16 +146,20 @@ const buildPrintDocument = (student) => {
 };
 
 // ── Field row component ───────────────────────────────────────────────────────
-const Row = ({ label, value, mono, highlight }) => (
-  <div className="flex flex-col sm:flex-row sm:items-start gap-0.5 sm:gap-0 py-2 border-b border-gray-50 last:border-0">
-    <span className="w-full sm:w-44 shrink-0 text-xs font-semibold text-gray-400 uppercase tracking-wide pt-0.5">
-      {label}
-    </span>
-    <span className={`text-sm ${highlight ? 'font-bold text-[#003C43]' : 'text-gray-800'} ${mono ? 'font-mono' : ''}`}>
-      {value || <span className="text-gray-300">—</span>}
-    </span>
-  </div>
-);
+const Row = ({ label, value, mono, highlight }) => {
+  const isEmpty = value === null || value === undefined || value === '';
+
+  return (
+    <tr className="border-b border-gray-100 last:border-0">
+      <th className="w-[42%] px-3 py-2 text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide bg-gray-50/60">
+        {label}
+      </th>
+      <td className={`px-3 py-2 text-sm align-top ${highlight ? 'font-bold text-[#003C43]' : 'text-gray-800'} ${mono ? 'font-mono text-xs' : ''}`}>
+        {isEmpty ? <span className="text-gray-300">—</span> : value}
+      </td>
+    </tr>
+  );
+};
 
 // ── Section card ──────────────────────────────────────────────────────────────
 const Section = ({ title, children }) => (
@@ -163,7 +167,13 @@ const Section = ({ title, children }) => (
     <div className="px-5 py-3 border-b border-gray-100 bg-gray-50">
       <h2 className="text-xs font-bold text-[#003C43] uppercase tracking-widest">{title}</h2>
     </div>
-    <div className="px-5 py-3">{children}</div>
+    <div className="px-4 py-3">
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
+          <tbody>{children}</tbody>
+        </table>
+      </div>
+    </div>
   </div>
 );
 
@@ -210,7 +220,7 @@ const StudentDetails = () => {
     if (!window.confirm('Delete this student permanently? This cannot be undone.')) return;
     try {
       await studentAPI.delete(studentId);
-      navigate('/my-students');
+      navigate('/students');
     } catch {
       setError('Failed to delete student.');
     }
@@ -245,7 +255,7 @@ const StudentDetails = () => {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
         <div className="bg-red-50 border border-red-200 rounded-xl p-5">
           <p className="text-red-700 text-sm">{error || 'Student not found.'}</p>
-          <Link to="/my-students" className="text-[#135D66] text-sm hover:underline mt-3 inline-block">
+          <Link to="/students" className="text-[#135D66] text-sm hover:underline mt-3 inline-block">
             Back to Students
           </Link>
         </div>
@@ -288,7 +298,7 @@ const StudentDetails = () => {
               className="px-4 py-2 bg-white border border-red-200 text-red-600 text-xs font-semibold rounded-lg hover:bg-red-50 transition">
               Delete
             </button>
-            <Link to="/my-students"
+            <Link to="/students"
               className="px-4 py-2 bg-white border border-gray-200 text-gray-500 text-xs font-semibold rounded-lg hover:bg-gray-50 transition">
               Back
             </Link>
