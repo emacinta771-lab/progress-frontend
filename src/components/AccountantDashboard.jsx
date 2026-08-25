@@ -225,7 +225,7 @@ const AccountantDashboard = () => {
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              👋 Welcome back, {user?.first_name || 'Accountant'}!
+                Welcome back, {user?.first_name || 'Accountant'}!
             </h1>
             <p className="text-white/70 text-sm mt-0.5">
               Accountant Dashboard — Manage school finances, fees, and payments.
