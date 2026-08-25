@@ -217,6 +217,18 @@ const AccountantDashboard = () => {
     }
   };
 
+  const getStudentOutstandingBalance = (student) => {
+    const totalFees = parseFloat(student.total_fees) || 0;
+    const amountPaid = parseFloat(student.amount_paid) || 0;
+    const recordedBalance = parseFloat(student.outstanding_balance);
+
+    if (Number.isFinite(recordedBalance) && recordedBalance > 0) {
+      return recordedBalance;
+    }
+
+    return Math.max(totalFees - amountPaid, 0);
+  };
+
   return (
     <div className="min-h-screen bg-[#f0f7ff] text-[#1a2a3a] pb-12">
 
@@ -347,7 +359,11 @@ const AccountantDashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-sm">
-                  {filteredStudents.map((student) => (
+                  {filteredStudents.map((student) => {
+                    const outstandingBalance = getStudentOutstandingBalance(student);
+                    const hasOutstandingBalance = outstandingBalance > 0;
+
+                    return (
                     <tr key={student.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-2.5 font-medium text-gray-800">{student.first_name} {student.last_name}</td>
                       <td className="px-4 py-2.5">
@@ -358,17 +374,17 @@ const AccountantDashboard = () => {
                       <td className="px-4 py-2.5 font-medium text-gray-800">MK {parseFloat(student.total_fees || 0).toLocaleString()}</td>
                       <td className="px-4 py-2.5 text-green-600">MK {parseFloat(student.amount_paid || 0).toLocaleString()}</td>
                       <td className="px-4 py-2.5 font-medium">
-                        {student.outstanding_balance > 0
-                          ? <span className="text-red-600">MK {parseFloat(student.outstanding_balance).toLocaleString()}</span>
+                        {hasOutstandingBalance
+                          ? <span className="text-red-600">MK {outstandingBalance.toLocaleString()}</span>
                           : <span className="text-green-600">Paid</span>}
                       </td>
                       <td className="px-4 py-2.5">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium inline-block
                           ${student.financial_hold ? 'bg-red-50 text-red-700 border border-red-200'
-                            : student.outstanding_balance > 0 ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                            : hasOutstandingBalance ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
                             : 'bg-green-50 text-green-700 border border-green-200'}`}
                         >
-                          {student.financial_hold ? 'On Hold' : student.outstanding_balance > 0 ? 'Pending' : 'Paid'}
+                          {student.financial_hold ? 'On Hold' : hasOutstandingBalance ? 'Pending' : 'Paid'}
                         </span>
                       </td>
                       <td className="px-4 py-2.5 text-center">
@@ -380,7 +396,8 @@ const AccountantDashboard = () => {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
