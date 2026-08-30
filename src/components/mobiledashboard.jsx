@@ -65,25 +65,25 @@ const StatCard = ({ title, value, icon: Icon, color = 'blue', loading = false })
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md transition-shadow duration-200 relative overflow-hidden">
-      <div className={`absolute top-0 left-0 h-1 w-full bg-gradient-to-r ${colorClasses[color]}`} />
+    <div className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm hover:shadow-md transition-shadow duration-200 relative overflow-hidden">
+      <div className={`absolute top-0 left-0 h-0.5 w-full bg-gradient-to-r ${colorClasses[color]}`} />
       
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-[11px] uppercase tracking-wider text-gray-500 font-medium">
+          <p className="text-[10px] uppercase tracking-wide text-gray-500 font-medium">
             {title}
           </p>
-          <p className="text-xl font-bold text-gray-900 mt-1">
+          <p className="text-lg font-bold text-gray-900 mt-0.5">
             {loading ? (
-              <span className="inline-block w-16 h-6 bg-gray-200 rounded animate-pulse" />
+              <span className="inline-block w-14 h-5 bg-gray-200 rounded animate-pulse" />
             ) : (
               value
             )}
           </p>
         </div>
         {Icon && (
-          <div className={`p-2 rounded-xl ${lightColors[color]}`}>
-            <Icon size={18} />
+          <div className={`p-1.5 rounded-lg ${lightColors[color]}`}>
+            <Icon size={15} />
           </div>
         )}
       </div>
@@ -136,11 +136,11 @@ const QuickActionsCard = ({ actions }) => {
             <Link
               key={action.path}
               to={action.path}
-              className="group bg-gradient-to-br from-[#135D66] to-[#0e4a52] hover:from-[#0e4a52] hover:to-[#0a3a40] text-white rounded-xl px-4 py-3.5 text-center transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg"
+              className="group bg-gradient-to-br from-[#135D66] to-[#0e4a52] hover:from-[#0e4a52] hover:to-[#0a3a40] text-white rounded-xl px-4 py-4.5 text-center transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg min-h-[92px] flex items-center justify-center"
             >
               <div className="flex flex-col items-center gap-1.5">
-                <Icon size={20} className="text-white/90 group-hover:text-white" />
-                <span className="text-xs font-medium tracking-wide">
+                <Icon size={22} className="text-white/90 group-hover:text-white" />
+                <span className="text-[13px] font-semibold tracking-wide">
                   {action.label}
                 </span>
               </div>
@@ -213,7 +213,7 @@ const TeacherMobileView = () => {
       name={user?.first_name}
       fallbackName="Teacher"
     >
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2">
         <StatCard 
           title="Total Students" 
           value={stats.total} 
@@ -294,7 +294,7 @@ const AccountantMobileView = () => {
       name={user?.first_name}
       fallbackName="Accountant"
     >
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2">
         <StatCard 
           title="Revenue" 
           value={formatCurrency(stats.revenue)} 
