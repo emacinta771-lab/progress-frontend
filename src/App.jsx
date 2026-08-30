@@ -9,6 +9,7 @@ import TeacherDashboard from './components/TeacherDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import AccountantDashboard from './components/AccountantDashboard';
 import StudentDashboard from './components/StudentDashboard';
+import MobileDashboard from './components/mobiledashboard';
 
 // Student Management
 import StudentForm from './components/StudentForm';
@@ -71,7 +72,7 @@ const AppRoutes = () => {
           {/* Teacher Dashboard */}
           <Route path="/teacher-dashboard" element={
             <ProtectedRoute requiredRoles={['teacher']}>
-              <TeacherDashboard />
+              <MobileDashboard role="teacher" desktopComponent={<TeacherDashboard />} />
             </ProtectedRoute>
           } />
 
@@ -85,7 +86,7 @@ const AppRoutes = () => {
           {/* Accountant Dashboard */}
           <Route path="/accountant-dashboard" element={
             <ProtectedRoute requiredRoles={['accountant']}>
-              <AccountantDashboard />
+              <MobileDashboard role="accountant" desktopComponent={<AccountantDashboard />} />
             </ProtectedRoute>
           } />
 

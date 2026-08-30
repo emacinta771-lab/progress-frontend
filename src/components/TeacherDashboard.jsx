@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { attendanceAPI, studentAPI, teacherAPI } from '../services/api';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import TeacherNav from './TeacherNav';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -39,8 +39,7 @@ const Field = ({ label, value, highlight }) => (
 
 // ── Main component ────────────────────────────────────────────────────────────
 const TeacherDashboard = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [stats, setStats]                   = useState(null);
   const [teacherSnapshot, setTeacherSnapshot] = useState({
@@ -182,15 +181,6 @@ const TeacherDashboard = () => {
       setEditError(err.response?.data?.error || 'Failed to update student.');
     } finally { setSaving(false); }
   };
-  const navItems = [
-    { title: 'Dashboard',  path: '/teacher-dashboard' },
-    { title: 'Students',   path: '/my-students' },
-    { title: 'Attendance', path: '/attendance' },
-    { title: 'Grades',     path: '/grades' },
-    { title: 'Add Student',path: '/add-student' },
-    { title: 'My Class',   path: '/my-class' },
-  ];
-
   // ── Loading skeleton ────────────────────────────────────────────────────────
   if (loading) return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -206,64 +196,40 @@ const TeacherDashboard = () => {
 
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-4 right-4 z-[100] px-4 py-3 rounded-xl shadow-lg text-sm font-medium flex items-center gap-2
+        <div className={`fixed top-4 left-1/2 -translate-x-1/2 sm:left-auto sm:right-4 sm:translate-x-0 w-[calc(100%-2rem)] sm:w-auto z-[100] px-4 py-3 rounded-xl shadow-lg text-sm font-medium flex items-center gap-2
           ${toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
           <span>{toast.type === 'success' ? '✓' : '✕'}</span>{toast.msg}
         </div>
       )}
 
-      {/* Header */}
-      <div className="bg-[#003C43] text-white px-6 py-5">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <TeacherNav />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-8 space-y-6">
+
+        <div className="bg-white border border-gray-100 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
           <div>
-            <h1 className="text-xl font-bold">👋 Welcome back, {user?.first_name || 'Teacher'}</h1>
-            <p className="text-white/60 text-xs mt-0.5">Teacher Dashboard · Academic Year 2026</p>
+            <h2 className="text-base sm:text-lg font-bold text-gray-900">Welcome back, {user?.first_name || 'Teacher'}</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Teacher Dashboard · Academic Year 2026</p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1.5 bg-white/10 border border-white/20 px-3 py-1.5 rounded-full text-xs text-white/80">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live
-            </span>
-            <button onClick={() => { logout(); navigate('/login'); }}
-              className="text-xs bg-white/10 hover:bg-white/20 border border-white/20 text-white px-3 py-1.5 rounded-full transition">
-              🚪 Logout
-            </button>
-          </div>
+          <span className="w-fit flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-full text-xs text-emerald-700 font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live
+          </span>
         </div>
-      </div>
-
-      {/* Nav */}
-      <nav className="bg-[#135D66] text-white sticky top-0 z-50 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-12">
-          <div className="flex items-center gap-0.5 overflow-x-auto">
-            {navItems.map(item => (
-              <Link key={item.path} to={item.path}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition
-                  ${window.location.pathname === item.path ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
-                <span>{item.title}</span>
-              </Link>
-            ))}
-          </div>
-          <span className="text-xs text-white/50 hidden md:block">{user?.first_name}</span>
-        </div>
-      </nav>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
 
         {/* Stats row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           {[
             { label: 'Total Students', value: stats?.total_students ?? 0,     icon: '👨‍🎓', color: 'text-indigo-600' },
             { label: 'Present Today',  value: teacherSnapshot.presentToday,   icon: '✅',   color: 'text-green-600' },
             { label: 'Absent Today',   value: teacherSnapshot.absentToday,    icon: '❌',   color: 'text-red-500' },
             { label: 'My Classes',     value: teacherSnapshot.classCount,     icon: '📚',   color: 'text-teal-600' },
           ].map((s, i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <div key={i} className="bg-white rounded-xl border border-gray-100 shadow-sm p-3.5 sm:p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">{s.label}</span>
                 <span className="text-lg">{s.icon}</span>
               </div>
-              <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+              <p className={`text-xl sm:text-2xl font-bold ${s.color}`}>{s.value}</p>
             </div>
           ))}
         </div>
@@ -274,7 +240,7 @@ const TeacherDashboard = () => {
           <button
             type="button"
             onClick={() => setListOpen(o => !o)}
-            className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 hover:bg-gray-50/60 transition text-left"
+            className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-5 py-4 hover:bg-gray-50/60 transition text-left"
           >
             <div className="flex items-center gap-3">
               <h2 className="text-sm font-semibold text-gray-800">My Students</h2>
@@ -282,7 +248,7 @@ const TeacherDashboard = () => {
                 {allStudents.length} total
               </span>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-start">
               <Link to="/add-student"
                 onClick={e => e.stopPropagation()}
                 className="flex items-center gap-1 px-3 py-1.5 bg-[#135D66] hover:bg-[#0e4a52] text-white text-xs font-semibold rounded-lg transition whitespace-nowrap">
@@ -297,7 +263,7 @@ const TeacherDashboard = () => {
           {/* Collapsible body */}
           <div className={`transition-all duration-300 ease-in-out overflow-hidden ${listOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
             {/* Search + view-all row */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-5 py-3 border-t border-gray-100 bg-gray-50/40">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-4 sm:px-5 py-3 border-t border-gray-100 bg-gray-50/40">
               <div className="relative w-full sm:w-60">
                 <input type="text" placeholder="Search students…" value={search}
                   onChange={e => setSearch(e.target.value)}
@@ -317,63 +283,108 @@ const TeacherDashboard = () => {
                 {search ? 'No students match your search.' : 'No students found.'}
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="bg-gray-50 text-gray-500 text-xs font-semibold uppercase tracking-wide border-y border-gray-100">
-                      <th className="px-5 py-2.5">Student</th>
-                      <th className="px-4 py-2.5">LIN Code</th>
-                      <th className="px-4 py-2.5">Standard</th>
-                      <th className="px-4 py-2.5">Parent</th>
-                      <th className="px-4 py-2.5">Status</th>
-                      <th className="px-4 py-2.5 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {visible.map((s, i) => (
-                      <tr key={i} className="hover:bg-gray-50/70 transition group">
-                        <td className="px-5 py-3">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-white text-xs font-bold ${avatarColor(`${s.first_name} ${s.last_name}`)}`}>
-                              {initials(`${s.first_name} ${s.last_name}`)}
-                            </div>
-                            <span className="font-medium text-gray-800">{s.first_name} {s.last_name}</span>
+              <>
+                <div className="md:hidden px-4 py-3 space-y-3">
+                  {visible.map((s, i) => (
+                    <div key={i} className="border border-gray-100 rounded-xl p-3 bg-white shadow-sm">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-white text-xs font-bold ${avatarColor(`${s.first_name} ${s.last_name}`)}`}>
+                            {initials(`${s.first_name} ${s.last_name}`)}
                           </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          {(s.lin_code || s.student_code)
-                            ? <span className="font-mono text-xs bg-gray-100 text-gray-600 border border-gray-200 px-2 py-0.5 rounded">{s.lin_code || s.student_code}</span>
-                            : <span className="text-xs text-red-400 italic">— no LIN</span>}
-                        </td>
-                        <td className="px-4 py-3 text-gray-600 text-xs">Std {s.current_standard}</td>
-                        <td className="px-4 py-3 text-gray-500 text-xs">{s.parent_name || '—'}</td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium border ${statusStyle(s.enrollment_status)}`}>
-                            {s.enrollment_status}
-                          </span>
-                        </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-center gap-2">
-                          <button onClick={() => openInfo(s)}
-                            className="px-2.5 py-1 text-[11px] font-medium text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition">
-                            Info
-                          </button>
-                          <button onClick={() => openEdit(s)}
-                            className="px-2.5 py-1 text-[11px] font-medium text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 rounded-lg transition">
-                            Edit
-                          </button>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-sm text-gray-900 truncate">{s.first_name} {s.last_name}</p>
+                            <p className="text-xs text-gray-500">Std {s.current_standard}</p>
+                          </div>
                         </div>
-                      </td>
-                    </tr>
+                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium border ${statusStyle(s.enrollment_status)}`}>
+                          {s.enrollment_status}
+                        </span>
+                      </div>
+
+                      <div className="mt-2 space-y-1.5 text-xs">
+                        <p className="text-gray-600">
+                          LIN:{' '}
+                          {(s.lin_code || s.student_code)
+                            ? <span className="font-mono text-gray-700">{s.lin_code || s.student_code}</span>
+                            : <span className="text-red-400 italic">No LIN</span>}
+                        </p>
+                        <p className="text-gray-500">Parent: {s.parent_name || '—'}</p>
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        <button onClick={() => openInfo(s)}
+                          className="w-full px-2.5 py-2 text-[11px] font-medium text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition">
+                          Info
+                        </button>
+                        <button onClick={() => openEdit(s)}
+                          className="w-full px-2.5 py-2 text-[11px] font-medium text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 rounded-lg transition">
+                          Edit
+                        </button>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="bg-gray-50 text-gray-500 text-xs font-semibold uppercase tracking-wide border-y border-gray-100">
+                        <th className="px-5 py-2.5">Student</th>
+                        <th className="px-4 py-2.5">LIN Code</th>
+                        <th className="px-4 py-2.5">Standard</th>
+                        <th className="px-4 py-2.5">Parent</th>
+                        <th className="px-4 py-2.5">Status</th>
+                        <th className="px-4 py-2.5 text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {visible.map((s, i) => (
+                        <tr key={i} className="hover:bg-gray-50/70 transition group">
+                          <td className="px-5 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-white text-xs font-bold ${avatarColor(`${s.first_name} ${s.last_name}`)}`}>
+                                {initials(`${s.first_name} ${s.last_name}`)}
+                              </div>
+                              <span className="font-medium text-gray-800">{s.first_name} {s.last_name}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            {(s.lin_code || s.student_code)
+                              ? <span className="font-mono text-xs bg-gray-100 text-gray-600 border border-gray-200 px-2 py-0.5 rounded">{s.lin_code || s.student_code}</span>
+                              : <span className="text-xs text-red-400 italic">— no LIN</span>}
+                          </td>
+                          <td className="px-4 py-3 text-gray-600 text-xs">Std {s.current_standard}</td>
+                          <td className="px-4 py-3 text-gray-500 text-xs">{s.parent_name || '—'}</td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium border ${statusStyle(s.enrollment_status)}`}>
+                              {s.enrollment_status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-center gap-2">
+                              <button onClick={() => openInfo(s)}
+                                className="px-2.5 py-1 text-[11px] font-medium text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition">
+                                Info
+                              </button>
+                              <button onClick={() => openEdit(s)}
+                                className="px-2.5 py-1 text-[11px] font-medium text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 rounded-lg transition">
+                                Edit
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
               {search && (
-                <p className="px-5 py-2 text-xs text-gray-400 border-t border-gray-100">
+                <p className="px-4 sm:px-5 py-2 text-xs text-gray-400 border-t border-gray-100">
                   {visible.length} result{visible.length !== 1 ? 's' : ''} for "{search}"
                 </p>
               )}
-            </div>
+              </>
           )}
           </div> {/* end collapsible body */}
         </div>
@@ -382,17 +393,17 @@ const TeacherDashboard = () => {
 
       {/* ── INFO MODAL ──────────────────────────────────────────────────────── */}
       {showInfo && selectedStudent && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-0 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-none sm:rounded-2xl shadow-2xl w-full max-w-3xl h-[100dvh] sm:h-auto max-h-[100dvh] sm:max-h-[90vh] overflow-y-auto">
             {/* Modal header */}
-            <div className="sticky top-0 bg-[#135D66] text-white px-6 py-4 rounded-t-2xl flex items-center justify-between">
-              <h2 className="text-base font-bold flex items-center gap-2">👤 Student Profile</h2>
+            <div className="sticky top-0 bg-[#135D66] text-white px-4 sm:px-6 py-4 sm:rounded-t-2xl flex items-center justify-between">
+              <h2 className="text-sm sm:text-base font-bold flex items-center gap-2">👤 Student Profile</h2>
               <button onClick={() => setShowInfo(false)} className="text-white/70 hover:text-white text-xl leading-none">×</button>
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-5 sm:space-y-6">
               {/* Profile strip */}
-              <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
                 <div className={`w-14 h-14 rounded-full flex items-center justify-center text-white text-lg font-bold shrink-0 ${avatarColor(`${selectedStudent.first_name} ${selectedStudent.last_name}`)}`}>
                   {initials(`${selectedStudent.first_name} ${selectedStudent.last_name}`)}
                 </div>
@@ -447,7 +458,7 @@ const TeacherDashboard = () => {
               ].map(section => (
                 <div key={section.title}>
                   <h4 className="text-xs font-semibold text-[#135D66] uppercase tracking-wider mb-2 border-b border-[#135D66]/15 pb-1">{section.title}</h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {section.fields.map(f => <Field key={f.label} label={f.label} value={f.value} highlight={f.highlight} />)}
                   </div>
                 </div>
@@ -466,14 +477,14 @@ const TeacherDashboard = () => {
 
       {/* ── EDIT MODAL ──────────────────────────────────────────────────────── */}
       {showEdit && selectedStudent && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-[#135D66] text-white px-6 py-4 rounded-t-2xl flex items-center justify-between">
-              <h2 className="text-base font-bold">✏️ Edit Student</h2>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-0 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-none sm:rounded-2xl shadow-2xl w-full max-w-3xl h-[100dvh] sm:h-auto max-h-[100dvh] sm:max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-[#135D66] text-white px-4 sm:px-6 py-4 sm:rounded-t-2xl flex items-center justify-between">
+              <h2 className="text-sm sm:text-base font-bold">✏️ Edit Student</h2>
               <button onClick={() => setShowEdit(false)} className="text-white/70 hover:text-white text-xl leading-none">×</button>
             </div>
 
-            <form onSubmit={handleSave} className="p-6 space-y-6">
+            <form onSubmit={handleSave} className="p-4 sm:p-6 space-y-6">
 
               {editError && (
                 <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
@@ -616,13 +627,13 @@ const TeacherDashboard = () => {
               </div>
 
               {/* Actions */}
-              <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2 border-t border-gray-100">
                 <button type="button" onClick={() => setShowEdit(false)}
-                  className="px-5 py-2 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition">
+                  className="w-full sm:w-auto px-5 py-2 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition">
                   Cancel
                 </button>
                 <button type="submit" disabled={saving}
-                  className="px-5 py-2 bg-[#135D66] hover:bg-[#0e4a52] disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition flex items-center gap-2">
+                  className="w-full sm:w-auto px-5 py-2 bg-[#135D66] hover:bg-[#0e4a52] disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition flex items-center justify-center gap-2">
                   {saving && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                   {saving ? 'Saving…' : 'Save Changes'}
                 </button>
