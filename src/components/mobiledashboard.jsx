@@ -136,7 +136,7 @@ const QuickActionsCard = ({ actions }) => {
             <Link
               key={action.path}
               to={action.path}
-              className="group bg-gradient-to-br from-[#135D66] to-[#0e4a52] hover:from-[#0e4a52] hover:to-[#0a3a40] text-white rounded-xl px-4 py-4.5 text-center transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg min-h-[92px] flex items-center justify-center"
+              className="group bg-gradient-to-br from-[#135D66] to-[#0e4a52] hover:from-[#0e4a52] hover:to-[#0a3a40] text-white rounded-xl px-4 py-5 text-center transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] shadow-md hover:shadow-lg min-h-[96px] flex items-center justify-center"
             >
               <div className="flex flex-col items-center gap-1.5">
                 <Icon size={22} className="text-white/90 group-hover:text-white" />

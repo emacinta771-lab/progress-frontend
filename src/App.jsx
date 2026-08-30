@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/AuthContext';
 import Login from './components/login';
 import StudentLogin from './components/studentlogin';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -43,6 +44,11 @@ import ReceiptRepository from './components/ReceiptRepository';
 
 import './index.css';
 
+const DashboardRedirect = () => {
+  const { getDashboardPath } = useAuth();
+  return <Navigate to={getDashboardPath()} replace />;
+};
+
 const AppRoutes = () => {
   return (
     <BrowserRouter>
@@ -65,7 +71,7 @@ const AppRoutes = () => {
           {/* Default Dashboard - Redirects based on role */}
           <Route path="/dashboard" element={
             <ProtectedRoute>
-              <TeacherDashboard />
+              <DashboardRedirect />
             </ProtectedRoute>
           } />
 
