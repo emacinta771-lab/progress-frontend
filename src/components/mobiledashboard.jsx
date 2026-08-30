@@ -20,25 +20,32 @@ import {
 // Custom hook for phone detection with SSR support
 const useIsPhone = () => {
   const getMatch = () => {
-    if (typeof window === 'undefined' || !window.matchMedia) return false;
-    return window.matchMedia('(max-width: 768px)').matches;
+    if (typeof window === 'undefined') return false;
+    if (window.matchMedia) return window.matchMedia('(max-width: 768px)').matches;
+    return window.innerWidth <= 768;
   };
 
   const [isPhone, setIsPhone] = useState(getMatch);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return undefined;
+    if (typeof window === 'undefined') return undefined;
 
-    const mediaQuery = window.matchMedia('(max-width: 768px)');
-    const updateMatch = (event) => setIsPhone(event.matches);
+    const updateMatch = () => setIsPhone(getMatch());
 
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', updateMatch);
-      return () => mediaQuery.removeEventListener('change', updateMatch);
+    if (window.matchMedia) {
+      const mediaQuery = window.matchMedia('(max-width: 768px)');
+
+      if (mediaQuery.addEventListener) {
+        mediaQuery.addEventListener('change', updateMatch);
+        return () => mediaQuery.removeEventListener('change', updateMatch);
+      }
+
+      mediaQuery.addListener(updateMatch);
+      return () => mediaQuery.removeListener(updateMatch);
     }
 
-    mediaQuery.addListener(updateMatch);
-    return () => mediaQuery.removeListener(updateMatch);
+    window.addEventListener('resize', updateMatch);
+    return () => window.removeEventListener('resize', updateMatch);
   }, []);
 
   return isPhone;
@@ -336,8 +343,27 @@ const MobileDashboard = ({ role, desktopComponent }) => {
 
   const currentRole = useMemo(() => role || user?.role, [role, user?.role]);
 
-  // If not on phone, render desktop version
-  if (!isPhone) {
+  const forceMobile = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+
+    const params = new URLSearchParams(window.location.search);
+    const urlOverride = params.get('mobile');
+
+    if (urlOverride === '1') return true;
+    if (urlOverride === '0') return false;
+
+    try {
+      const savedOverride = window.localStorage.getItem('mobile-dashboard-force');
+      return savedOverride === '1';
+    } catch {
+      return false;
+    }
+  }, [typeof window !== 'undefined' ? window.location.search : '']);
+
+  const shouldRenderMobile = isPhone || forceMobile;
+
+  // If not on phone, render desktop version unless a dev override is enabled
+  if (!shouldRenderMobile) {
     return desktopComponent;
   }
 
